@@ -1,0 +1,6 @@
+serverhub-agent
+serverhub-agent.exe
+tmp/
+*.exe
+*.test
+*.out

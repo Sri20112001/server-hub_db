@@ -1,0 +1,59 @@
+{
+  "expo": {
+    "name": "Server Hub",
+    "slug": "serverhub-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "serverhub",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "imageWidth": 200,
+      "resizeMode": "contain",
+      "backgroundColor": "#121316"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#121316"
+      },
+      "package": "com.serverhub.mobile",
+      "usesCleartextTraffic": true,
+      "permissions": [
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Server Hub to use Face ID for authentication."
+        }
+      ],
+      "expo-notifications",
+      "expo-asset",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#121316",
+          "dark": {
+            "image": "./assets/splash.png",
+            "backgroundColor": "#121316"
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
