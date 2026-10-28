@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { API_BASE } from "./api";
-import type { BusEvent } from "./types";
+import type { BusEvent } from "./types/logs";
 
 const TYPES = [
   "deployment.started",

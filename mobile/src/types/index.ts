@@ -205,6 +205,22 @@ export interface Alert {
   resolvedAt: string | null;
 }
 
+export interface AlertRule {
+  id: number;
+  serverId: number | null;
+  serverName: string | null;
+  name: string;
+  metric: "cpu" | "memory" | "disk";
+  operator: "above" | "below";
+  threshold: number;
+  severity: "WARNING" | "CRITICAL";
+  forSec: number;
+  enabled: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface InAppNotification {
   id: number;
   username: string;

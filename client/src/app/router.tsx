@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router";
-import { AppShell } from "../components/chrome";
+import { AppShell } from "../components/chrome/AppShell";
 import { DashboardPage } from "../features/dashboard/DashboardPage";
 import { FleetPage } from "../features/dashboard/FleetPage";
 import { DatabasesPage } from "../features/dashboard/DatabasesPage";
@@ -9,6 +9,7 @@ import { TelemetryPage } from "../features/dashboard/TelemetryPage";
 import { ServersPage } from "../features/dashboard/ServersPage";
 import { ServerDetailPage } from "../features/dashboard/ServerDetailPage";
 import { AlertsPage } from "../features/dashboard/AlertsPage";
+import { AlertRulesPage } from "../features/dashboard/AlertRulesPage";
 import { HealthChecksPage } from "../features/dashboard/HealthChecksPage";
 import { MonitoringPage } from "../features/dashboard/MonitoringPage";
 import { AuditLogPage } from "../features/dashboard/AuditLogPage";
@@ -112,6 +113,14 @@ export function AppRouter() {
                 element: (
                   <Protected>
                     <AlertsPage />
+                  </Protected>
+                ),
+              },
+              {
+                path: "alert-rules",
+                element: (
+                  <Protected>
+                    <AlertRulesPage />
                   </Protected>
                 ),
               },

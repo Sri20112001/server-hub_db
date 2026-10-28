@@ -62,7 +62,11 @@ body {
 }
 
 body {
-  background: var(--color-paper);
+  background-color: var(--color-paper);
+  background-image: url("./assets/screen-light.png");
+  background-repeat: repeat;
+  background-attachment: fixed;
+  background-size: 1920px auto;
   color: var(--color-ink);
   font-family: var(--font-body);
   font-size: 15px;
@@ -82,7 +86,8 @@ body {
 html { color-scheme: light; }
 html.dark { color-scheme: dark; }
 html.dark body {
-  background: var(--color-abyss);
+  background-color: var(--color-abyss);
+  background-image: url("./assets/screen-dark.png");
   color: var(--color-bone);
 }
 
@@ -130,14 +135,6 @@ a { color: inherit; }
 }
 
 @layer base {
-  body {
-    background-image: url("./assets/tech-grid.png");
-    background-repeat: repeat;
-    background-attachment: fixed;
-    /* Optional: blend mode to make it subtle */
-    background-blend-mode: overlay;
-  }
-
   /* Responsive media defaults: never overflow narrow viewports. */
   img,
   svg,

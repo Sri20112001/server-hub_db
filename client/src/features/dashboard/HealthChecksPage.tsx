@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, Plus, RefreshCw, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { api } from "../../lib/api";
-import type { HealthCheck } from "../../lib/types";
+import type { HealthCheck } from "../../lib/types/health";
 import { useUi } from "../../stores/store";
 
 const STATUS_COLOR: Record<string, string> = {

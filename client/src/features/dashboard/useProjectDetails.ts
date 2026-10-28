@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../lib/api";
-import type { Backup, Deployment, Project, SecretMeta, Service } from "../../lib/types";
+import type { Backup } from "../../lib/types/operations";
+import type { Deployment, Project, SecretMeta, Service } from "../../lib/types/projects";
 import { useUi } from "../../stores/store";
 
 export type PendingAction = "stop" | "restart" | null;

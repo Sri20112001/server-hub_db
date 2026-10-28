@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle, RefreshCw } from "lucide-react";
+import { AlertTriangle, CheckCircle, RefreshCw, Server } from "lucide-react";
 import { api } from "../../lib/api";
-import type { Alert } from "../../lib/types";
+import type { Alert } from "../../lib/types/alerts";
 import { useEvents } from "../../lib/useEvents";
 import { useUi } from "../../stores/store";
 
@@ -30,23 +30,31 @@ function AlertRow({ alert, onResolve }: { alert: Alert; onResolve: () => void })
   };
 
   return (
-    <div className={`flex items-start justify-between p-4 rounded-card border mb-3 ${SEVERITY_STYLE[alert.severity] ?? SEVERITY_STYLE.WARNING}`}>
+    <div className={`flex items-start justify-between p-4 rounded-card border mb-3 transition-colors ${SEVERITY_STYLE[alert.severity] ?? SEVERITY_STYLE.WARNING}`}>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs font-mono font-bold uppercase">{alert.severity}</span>
+        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10">
+            {alert.severity}
+          </span>
+          {(alert.serverName || alert.serverId) && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-mono bg-paper/80 dark:bg-abyss/80 border border-line/60 dark:border-edge/60 text-ink dark:text-bone">
+              <Server size={11} className="text-muted dark:text-fog" />
+              {alert.serverName || `Server #${alert.serverId}`}
+            </span>
+          )}
           <span className="text-xs font-mono opacity-75">{alert.condition}</span>
         </div>
         <p className="text-sm font-medium text-ink dark:text-bone">{alert.message}</p>
-        <p className="text-xs opacity-75 mt-1 font-mono text-muted dark:text-fog">
-          {new Date(alert.triggeredAt).toLocaleString()}
-          {alert.resolvedAt && ` → resolved ${new Date(alert.resolvedAt).toLocaleString()}`}
+        <p className="text-xs opacity-75 mt-1.5 font-mono text-muted dark:text-fog">
+          Triggered {new Date(alert.triggeredAt).toLocaleString()}
+          {alert.resolvedAt && ` · Resolved ${new Date(alert.resolvedAt).toLocaleString()}`}
         </p>
       </div>
       {alert.status === "TRIGGERED" && (
         <button
           onClick={resolve}
           disabled={busy}
-          className="ml-4 shrink-0 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded bg-white/70 dark:bg-black/30 border border-current hover:bg-white dark:hover:bg-black/50 transition-colors disabled:opacity-40"
+          className="ml-4 shrink-0 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-white/80 dark:bg-black/40 border border-current hover:bg-white dark:hover:bg-black/60 shadow-sm transition-all disabled:opacity-40"
         >
           <CheckCircle size={13} /> Resolve
         </button>
@@ -60,8 +68,8 @@ export function AlertsPage() {
   const [tab, setTab] = useState<"TRIGGERED" | "RESOLVED" | "">("TRIGGERED");
 
   const { data: alerts = [], isLoading, refetch } = useQuery({
-    queryKey: ["alerts", tab],
-    queryFn: () => api.alerts(tab || undefined),
+    queryKey: ["alerts"],
+    queryFn: () => api.alerts(),
     refetchInterval: 30_000,
   });
 
@@ -74,6 +82,12 @@ export function AlertsPage() {
   const triggered = alerts.filter((a) => a.status === "TRIGGERED");
   const resolved = alerts.filter((a) => a.status === "RESOLVED");
   const shown = tab === "TRIGGERED" ? triggered : tab === "RESOLVED" ? resolved : alerts;
+
+  const tabOptions = [
+    { key: "TRIGGERED" as const, label: "Triggered", count: triggered.length },
+    { key: "RESOLVED" as const, label: "Resolved", count: resolved.length },
+    { key: "" as const, label: "All", count: alerts.length },
+  ];
 
   return (
     <div className="min-h-screen pt-20 pb-28 px-4 sm:px-6 max-w-4xl mx-auto">
@@ -103,17 +117,26 @@ export function AlertsPage() {
       </div>
 
       <div className="flex gap-2 mb-4 flex-wrap">
-        {(["TRIGGERED", "RESOLVED", ""] as const).map((t) => (
+        {tabOptions.map((t) => (
           <button
-            key={t || "all"}
-            onClick={() => setTab(t)}
-            className={`px-3 py-1 rounded-full text-xs font-mono border transition-colors ${
-              tab === t
-                ? "bg-accent dark:bg-ember text-white dark:text-black border-transparent font-semibold"
+            key={t.key || "all"}
+            onClick={() => setTab(t.key)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono border transition-colors ${
+              tab === t.key
+                ? "bg-accent dark:bg-ember text-white dark:text-black border-transparent font-semibold shadow-sm"
                 : "border-line dark:border-edge text-muted dark:text-fog bg-white dark:bg-panel hover:text-ink dark:hover:text-bone"
             }`}
           >
-            {t || "All"}
+            <span>{t.label}</span>
+            <span
+              className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                tab === t.key
+                  ? "bg-white/20 dark:bg-black/20 text-white dark:text-black"
+                  : "bg-paper dark:bg-abyss text-muted dark:text-fog"
+              }`}
+            >
+              {t.count}
+            </span>
           </button>
         ))}
       </div>
@@ -129,7 +152,13 @@ export function AlertsPage() {
       {!isLoading && shown.length === 0 && (
         <div className="text-center py-16 text-muted dark:text-fog bg-white dark:bg-panel border border-line dark:border-edge rounded-card">
           <CheckCircle size={40} className="mx-auto mb-3 opacity-30 text-green-500" />
-          <p className="text-sm font-medium">No alerts{tab ? ` with status ${tab}` : ""}.</p>
+          <p className="text-sm font-medium">
+            {tab === "TRIGGERED"
+              ? "No active alerts — systems nominal."
+              : tab === "RESOLVED"
+              ? "No resolved alerts recorded."
+              : "No alerts recorded."}
+          </p>
           <p className="text-xs text-muted dark:text-fog mt-1">All monitored systems are within expected operational thresholds.</p>
         </div>
       )}

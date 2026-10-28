@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Pause, Play, Trash2 } from "lucide-react";
 import { API_BASE } from "../../lib/api";
-import { Kicker } from "../../components/ui";
+import { Kicker } from "../../components/ui/Kicker";
 
 type Level = "ALL" | "INFO" | "WARN" | "ERROR" | "DEBUG";
 

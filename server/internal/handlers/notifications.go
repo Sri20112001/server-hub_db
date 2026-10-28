@@ -66,6 +66,10 @@ type notifyView struct {
 		ChatID   string `json:"chatId"`
 		HasToken bool   `json:"hasToken"`
 	} `json:"telegram"`
+	Push struct {
+		Enabled bool `json:"enabled"`
+		Devices int  `json:"devices"`
+	} `json:"push"`
 	Email struct {
 		Enabled     bool   `json:"enabled"`
 		Host        string `json:"host"`
@@ -90,6 +94,10 @@ func (h *NotificationsHandler) Get(c *gin.Context) {
 	v.Telegram.Enabled = notifyBool(m, notify.KeyTgEnabled, false)
 	v.Telegram.ChatID = m[notify.KeyTgChat]
 	v.Telegram.HasToken = strings.HasPrefix(m[notify.KeyTgToken], "enc:")
+	v.Push.Enabled = notifyBool(m, notify.KeyPushEnabled, true)
+	if err := h.DB.QueryRow(`SELECT COUNT(*) FROM push_tokens`).Scan(&v.Push.Devices); err != nil {
+		v.Push.Devices = 0
+	}
 	v.Email.Enabled = notifyBool(m, notify.KeySmtpEnabled, false)
 	v.Email.Host = m[notify.KeySmtpHost]
 	v.Email.Port = m[notify.KeySmtpPort]
@@ -120,6 +128,9 @@ func (h *NotificationsHandler) Update(c *gin.Context) {
 			ChatID  string `json:"chatId"`
 			Token   string `json:"token"`
 		} `json:"telegram"`
+		Push struct {
+			Enabled *bool `json:"enabled"`
+		} `json:"push"`
 		Email struct {
 			Enabled  *bool  `json:"enabled"`
 			Host     string `json:"host"`
@@ -155,6 +166,7 @@ func (h *NotificationsHandler) Update(c *gin.Context) {
 		func() error { return setBool(notify.KeyOnBackup, body.Events.BackupFailed) },
 		func() error { return setBool(notify.KeyOnProject, body.Events.ProjectFailed) },
 		func() error { return setBool(notify.KeyTgEnabled, body.Telegram.Enabled) },
+		func() error { return setBool(notify.KeyPushEnabled, body.Push.Enabled) },
 		func() error { return setStr(notify.KeyTgChat, body.Telegram.ChatID) },
 		func() error { return setBool(notify.KeySmtpEnabled, body.Email.Enabled) },
 		func() error { return setStr(notify.KeySmtpHost, body.Email.Host) },
@@ -197,6 +209,6 @@ func (h *NotificationsHandler) Update(c *gin.Context) {
 
 // POST /server-hub/api/settings/notifications/test — probe enabled channels.
 func (h *NotificationsHandler) Test(c *gin.Context) {
-	tg, mail := notify.Test(h.DB)
-	c.JSON(http.StatusOK, gin.H{"telegram": tg, "email": mail})
+	tg, mail, push := notify.Test(h.DB)
+	c.JSON(http.StatusOK, gin.H{"telegram": tg, "email": mail, "push": push})
 }

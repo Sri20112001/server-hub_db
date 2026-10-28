@@ -231,12 +231,20 @@ func (h *SystemHandler) Dashboard(c *gin.Context) {
 }
 
 // GET /api/audit — recent audit records (secrets never included).
+// Paginates with limit/offset; the full row count rides in the X-Total-Count
+// header so the array body shape stays unchanged for existing callers.
 func (h *SystemHandler) Audit(c *gin.Context) {
 	limit := 100
 	if v, err := strconv.Atoi(c.DefaultQuery("limit", "100")); err == nil && v > 0 && v <= 500 {
 		limit = v
 	}
-	rows, err := h.DB.Query(`SELECT id,actor,action,resource,resource_id,timestamp,result,metadata FROM audit_logs ORDER BY id DESC LIMIT ?`, limit)
+	offset := 0
+	if v, err := strconv.Atoi(c.DefaultQuery("offset", "0")); err == nil && v > 0 {
+		offset = v
+	}
+	var total int
+	_ = h.DB.QueryRow(`SELECT COUNT(*) FROM audit_logs`).Scan(&total)
+	rows, err := h.DB.Query(`SELECT id,actor,action,resource,resource_id,timestamp,result,metadata FROM audit_logs ORDER BY id DESC LIMIT ? OFFSET ?`, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -251,5 +259,6 @@ func (h *SystemHandler) Audit(c *gin.Context) {
 			out = append(out, a)
 		}
 	}
+	c.Header("X-Total-Count", strconv.Itoa(total))
 	c.JSON(http.StatusOK, out)
 }

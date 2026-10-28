@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ShipWheel } from "lucide-react";
 import { useAuth, useUi } from "../../stores/store";
-import { Field } from "../../components/ui";
+import { Field } from "../../components/ui/Field";
 
 export function LoginPage() {
   const nav = useNavigate();

@@ -37,6 +37,27 @@ request. The backend already supports this header fallback alongside cookies.
 
 Token expiry is 24h. On 401, the user is redirected to the login screen.
 
+## Push notifications
+
+After login the app asks for notification permission (once) and registers its
+Expo push token with the backend (`POST /server-hub/api/push-tokens`,
+refreshed on every launch; removed on logout). Alert firings, threshold
+crossings, and deploy/backup failures then arrive as system pushes — tapping
+one opens the in-app notification center. Foreground pushes render as a
+banner with sound (`app/_layout.tsx`).
+
+Requirements and limits:
+
+- Physical device only — simulators/emulators silently skip registration.
+- Production builds need an EAS project ID in `app.json`
+  (`expo.extra.eas.projectId`); without it token fetch fails and the app
+  carries on without push.
+- Push delivery follows the backend notification settings
+  (`notify_enabled` master switch + per-event toggles); the push channel
+  itself defaults to on and can be switched off server-side.
+- `EXPO_PUBLIC_*` values are baked into the bundle — never put secrets there
+  (the push token is per-device and registered at runtime, not build time).
+
 ## Project Structure
 
 ```

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { ArrowRight, Trash2, X } from "lucide-react";
-import type { Project } from "../../lib/types";
-import { ConfirmModal, Kicker, StatusPill } from "../../components/ui";
+import type { Project } from "../../lib/types/projects";
+import { ConfirmModal } from "../../components/ui/ConfirmModal";
+import { Kicker } from "../../components/ui/Kicker";
+import { StatusPill } from "../../components/ui/StatusPill";
 import { useProjectDetails } from "./useProjectDetails";
 import { api } from "../../lib/api";
 import { useUi } from "../../stores/store";

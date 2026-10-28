@@ -40,6 +40,7 @@ Alertmanager. The browser never communicates with those systems directly.
 - **Alertmanager integration** — alerts, silences (create/delete), webhook receiver → SSE
 - **Monitoring dashboard** — CPU/memory/disk overview, active alerts, target health, metrics charts
 - **Alert engine** — threshold alerts (CPU/RAM/disk) + offline detection, TRIGGERED→RESOLVED state machine
+- **Custom alert rules** — per-server CPU/memory/disk rules with above/below operators, sustained-breach windows, and severity levels via `/server-hub/api/alert-rules`
 - **Health checks** — HTTP, TCP, and Ping probes with result history
 - **In-app notifications** — per-user notification center
 - **Audit log** — immutable record of all significant actions
@@ -51,7 +52,7 @@ Alertmanager. The browser never communicates with those systems directly.
 - **Secrets management** — AES-GCM encrypted project secrets
 - **Database browser** — auto-detect and browse Postgres/MySQL/Redis/MongoDB
 - **Backups** — project snapshot backups
-- **Notification channels** — Telegram and email alerts
+- **Notification channels** — Telegram, email, and mobile push alerts (Expo push; per-event toggles in Settings)
 
 ## Server Agent
 
@@ -234,6 +235,12 @@ DELETE /server-hub/api/server-groups/:id
 GET    /server-hub/api/alerts?status=TRIGGERED|RESOLVED
 PATCH  /server-hub/api/alerts/:id/resolve
 
+# Custom alert rules (per-server cpu|memory|disk thresholds; serverId null = all servers)
+GET    /server-hub/api/alert-rules
+POST   /server-hub/api/alert-rules            # operator+
+PATCH  /server-hub/api/alert-rules/:id        # operator+
+DELETE /server-hub/api/alert-rules/:id        # admin only
+
 # Health Checks
 GET    /server-hub/api/health-checks
 POST   /server-hub/api/health-checks
@@ -245,6 +252,11 @@ GET    /server-hub/api/health-checks/:id/results
 GET    /server-hub/api/notifications
 PATCH  /server-hub/api/notifications/:id/read
 POST   /server-hub/api/notifications/read-all
+
+# Mobile push tokens (any role manages its own devices)
+GET    /server-hub/api/push-tokens
+POST   /server-hub/api/push-tokens        # {expoPushToken, platform?}
+DELETE /server-hub/api/push-tokens        # {expoPushToken}
 
 # Audit
 GET    /server-hub/api/audit?limit=100

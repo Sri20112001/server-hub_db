@@ -2,11 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { ArrowLeft, Play, Power, RotateCcw, Search, Trash2, X } from "lucide-react";
 import { api, ApiError } from "../../lib/api";
-import type { DashboardData, Deployment, Project, Service } from "../../lib/types";
+import type { DashboardData } from "../../lib/types/dashboard";
+import type { Deployment, Project, Service } from "../../lib/types/projects";
 import { useUi } from "../../stores/store";
-import { ConfirmModal, DashboardSkeleton, EmptyState, Kicker } from "../../components/ui";
+import { ConfirmModal } from "../../components/ui/ConfirmModal";
+import { DashboardSkeleton } from "../../components/ui/DashboardSkeleton";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { Kicker } from "../../components/ui/Kicker";
 import { ProjectDrawer } from "./ProjectDrawer";
-import { ShipCard } from "./DashboardPage";
+import { ShipCard } from "./ShipCard";
 
 type BulkAction = "start" | "stop" | "restart";
 

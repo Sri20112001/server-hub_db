@@ -4,8 +4,10 @@ import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import { API_BASE, api } from "../../lib/api";
-import type { Service } from "../../lib/types";
-import { ConfirmModal, Field, Kicker } from "../../components/ui";
+import type { Service } from "../../lib/types/projects";
+import { ConfirmModal } from "../../components/ui/ConfirmModal";
+import { Field } from "../../components/ui/Field";
+import { Kicker } from "../../components/ui/Kicker";
 
 function wsBase(): string {
   return API_BASE.replace(/^http/, "ws");

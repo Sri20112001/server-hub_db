@@ -3,6 +3,7 @@ import * as SecureStore from "expo-secure-store";
 import { authApi } from "../api/auth";
 import { TOKEN_KEY, REFRESH_KEY, USER_KEY } from "../api/client";
 import { initStoredBaseUrl } from "../api/serverUrl";
+import { registerForPush, unregisterPush } from "../api/push";
 import type { User } from "../types";
 
 interface AuthState {
@@ -39,6 +40,8 @@ export const useAuthStore = create<AuthState>((set) => ({
           const freshUser = await authApi.me();
           await SecureStore.setItemAsync(USER_KEY, JSON.stringify(freshUser));
           set({ user: freshUser, token, checked: true });
+          // Refresh the push registration (idempotent server-side).
+          void registerForPush();
         } catch {
           await SecureStore.deleteItemAsync(TOKEN_KEY);
           await SecureStore.deleteItemAsync(REFRESH_KEY);
@@ -64,6 +67,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
       await SecureStore.setItemAsync(USER_KEY, JSON.stringify(user));
       set({ user, token: res.token, busy: false });
+      // Best-effort: a failed registration just means no push on this device.
+      void registerForPush();
     } catch (e) {
       set({
         busy: false,
@@ -75,6 +80,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: async () => {
     try {
+      // Drop this device's push registration while the token still works.
+      await unregisterPush();
       await authApi.logout();
     } catch {
       // ignore — clear local state regardless

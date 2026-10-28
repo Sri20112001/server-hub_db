@@ -17,9 +17,11 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -93,18 +95,72 @@ func parseSeconds(key string, def int) time.Duration {
 	return time.Duration(n) * time.Second
 }
 
-func loadConfig() (config, error) {
-	token := strings.TrimSpace(os.Getenv("AGENT_TOKEN"))
-	base := strings.TrimRight(strings.TrimSpace(os.Getenv("SERVERHUB_URL")), "/")
-	if token == "" || base == "" {
-		return config{}, fmt.Errorf("AGENT_TOKEN and SERVERHUB_URL are required")
+func loadDotEnv() {
+	f, err := os.Open(".env")
+	if err != nil {
+		return
 	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) == 2 {
+			k := strings.TrimSpace(parts[0])
+			v := strings.Trim(strings.TrimSpace(parts[1]), `"'`)
+			if os.Getenv(k) == "" {
+				_ = os.Setenv(k, v)
+			}
+		}
+	}
+}
+
+func loadConfig() (config, error) {
+	loadDotEnv()
+
+	tokenFlag := flag.String("token", "", "ServerHub agent token")
+	urlFlag := flag.String("url", "", "ServerHub base URL (e.g. http://localhost:4000)")
+	metricsFlag := flag.Int("metrics-interval", 0, "Seconds between metric reports")
+	heartbeatFlag := flag.Int("heartbeat-interval", 0, "Seconds between heartbeats")
+	timeoutFlag := flag.Int("timeout", 0, "Per-request timeout in seconds")
+	flag.Parse()
+
+	token := strings.TrimSpace(*tokenFlag)
+	if token == "" {
+		token = strings.TrimSpace(os.Getenv("AGENT_TOKEN"))
+	}
+	base := strings.TrimRight(strings.TrimSpace(*urlFlag), "/")
+	if base == "" {
+		base = strings.TrimRight(strings.TrimSpace(os.Getenv("SERVERHUB_URL")), "/")
+	}
+	if token == "" || base == "" {
+		return config{}, fmt.Errorf("AGENT_TOKEN (or -token) and SERVERHUB_URL (or -url) are required")
+	}
+
+	metricsInterval := parseSeconds("METRICS_INTERVAL", 60)
+	if *metricsFlag > 0 {
+		metricsInterval = time.Duration(*metricsFlag) * time.Second
+	}
+
+	heartbeatInterval := parseSeconds("HEARTBEAT_INTERVAL", 30)
+	if *heartbeatFlag > 0 {
+		heartbeatInterval = time.Duration(*heartbeatFlag) * time.Second
+	}
+
+	httpTimeout := parseSeconds("HTTP_TIMEOUT_SEC", 10)
+	if *timeoutFlag > 0 {
+		httpTimeout = time.Duration(*timeoutFlag) * time.Second
+	}
+
 	return config{
 		token:             token,
 		baseURL:           base,
-		metricsInterval:   parseSeconds("METRICS_INTERVAL", 60),
-		heartbeatInterval: parseSeconds("HEARTBEAT_INTERVAL", 30),
-		httpTimeout:       parseSeconds("HTTP_TIMEOUT_SEC", 10),
+		metricsInterval:   metricsInterval,
+		heartbeatInterval: heartbeatInterval,
+		httpTimeout:       httpTimeout,
 	}, nil
 }
 
@@ -127,22 +183,41 @@ func rootDiskUsage() *disk.UsageStat {
 }
 
 func totalNetIO() (rx, tx uint64) {
-	// Aggregate counter covers all interfaces (preferred).
-	if totals, err := gnet.IOCounters(false); err == nil && len(totals) > 0 {
-		return totals[0].BytesRecv, totals[0].BytesSent
-	}
-	// Fallback: sum per-interface counters, skipping loopback.
+	const maxSafe = 9223372036854775807
+	// Sum per-interface counters, filtering out loopback and virtual tunnels
 	pers, err := gnet.IOCounters(true)
-	if err != nil {
-		return 0, 0
-	}
-	for _, c := range pers {
-		name := strings.ToLower(c.Name)
-		if name == "lo" || strings.HasPrefix(name, "loopback") {
-			continue
+	if err == nil && len(pers) > 0 {
+		for _, c := range pers {
+			name := strings.ToLower(c.Name)
+			if name == "lo" || strings.HasPrefix(name, "loopback") || strings.Contains(name, "isatap") || strings.Contains(name, "teredo") {
+				continue
+			}
+			if c.BytesRecv < maxSafe {
+				rx += c.BytesRecv
+			}
+			if c.BytesSent < maxSafe {
+				tx += c.BytesSent
+			}
 		}
-		rx += c.BytesRecv
-		tx += c.BytesSent
+		if rx > 0 || tx > 0 {
+			if rx > maxSafe {
+				rx = maxSafe
+			}
+			if tx > maxSafe {
+				tx = maxSafe
+			}
+			return rx, tx
+		}
+	}
+	// Fallback to aggregate counter
+	if totals, err := gnet.IOCounters(false); err == nil && len(totals) > 0 {
+		rx, tx = totals[0].BytesRecv, totals[0].BytesSent
+		if rx > maxSafe {
+			rx = maxSafe
+		}
+		if tx > maxSafe {
+			tx = maxSafe
+		}
 	}
 	return rx, tx
 }

@@ -1,5 +1,5 @@
 import { client } from "./client";
-import type { ManagedServer, ServerGroup, Alert, InAppNotification } from "../types";
+import type { ManagedServer, ServerGroup, Alert, AlertRule, InAppNotification } from "../types";
 
 export interface ServerMetricPoint {
   id: number;
@@ -43,6 +43,31 @@ export const alertsApi = {
 
   resolve: (id: number) =>
     client.patch<{ ok: boolean }>(`/server-hub/api/alerts/${id}/resolve`).then((r) => r.data),
+};
+
+export interface AlertRuleInput {
+  name?: string;
+  serverId?: number | null;
+  metric: "cpu" | "memory" | "disk";
+  operator?: "above" | "below";
+  threshold: number;
+  severity?: "WARNING" | "CRITICAL";
+  forSec?: number;
+  enabled?: boolean;
+}
+
+export const rulesApi = {
+  list: () =>
+    client.get<AlertRule[]>("/server-hub/api/alert-rules").then((r) => r.data),
+
+  create: (body: AlertRuleInput) =>
+    client.post<{ id: number }>("/server-hub/api/alert-rules", body).then((r) => r.data),
+
+  update: (id: number, body: Partial<AlertRuleInput>) =>
+    client.patch<{ ok: boolean }>(`/server-hub/api/alert-rules/${id}`, body).then((r) => r.data),
+
+  remove: (id: number) =>
+    client.delete<{ ok: boolean }>(`/server-hub/api/alert-rules/${id}`).then((r) => r.data),
 };
 
 export const notificationsApi = {

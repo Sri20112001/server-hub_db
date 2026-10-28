@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"net/smtp"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -50,7 +51,19 @@ const (
 	KeySmtpFrom     = "notify_smtp_from"
 	KeySmtpTo       = "notify_smtp_to"
 	KeySmtpTLS      = "notify_smtp_tls" // "true" (default) | "false"
+	KeyPushEnabled  = "notify_push_enabled" // "false" disables; absent means on (registration is opt-in per device)
 )
+
+// expoPushURL is the Expo push ticket endpoint. A variable (not const) so
+// tests can point it at a stub server.
+var expoPushURL = "https://exp.host/--/api/v2/push/send"
+
+var expoTokenRe = regexp.MustCompile(`^(ExponentPushToken|ExpoPushToken)\[[^\]]+\]$`)
+
+// ValidExpoPushToken reports whether tok looks like a real Expo push token.
+func ValidExpoPushToken(tok string) bool {
+	return expoTokenRe.MatchString(strings.TrimSpace(tok))
+}
 
 func eventKey(event string) string {
 	switch event {
@@ -153,15 +166,110 @@ func Send(db *database.DB, event, title, body string) {
 				applog.Warn(db.GDB, "system", "notify: email failed: "+err.Error())
 			}
 		}
+		if pushChannelOn(m) {
+			if err := sendPush(db, title, text); err != nil {
+				applog.Warn(db.GDB, "system", "notify: push failed: "+err.Error())
+			}
+		}
 	}()
+}
+
+// pushChannelOn reports whether the push channel may deliver. Unlike the
+// other channels it defaults to on when unconfigured: a device only gets
+// pushes after its owner registers it from the mobile app (opt-in), so an
+// explicit "false" is the only off switch.
+func pushChannelOn(m map[string]string) bool {
+	v, ok := m[KeyPushEnabled]
+	if !ok {
+		return true
+	}
+	return on(map[string]string{KeyPushEnabled: v}, KeyPushEnabled)
+}
+
+// sendPush delivers title/body to every registered mobile device via the
+// Expo push service (max 100 recipients per ticket request). Tokens the
+// service reports as DeviceNotRegistered are pruned so the registry stays
+// clean as users reinstall or log out elsewhere.
+func sendPush(db *database.DB, title, text string) error {
+	rows, err := db.Query(`SELECT token FROM push_tokens`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	var tokens []string
+	for rows.Next() {
+		var tok string
+		if err := rows.Scan(&tok); err != nil {
+			continue
+		}
+		if ValidExpoPushToken(tok) {
+			tokens = append(tokens, tok)
+		}
+	}
+	if len(tokens) == 0 {
+		return nil
+	}
+	client := &http.Client{Timeout: 15 * time.Second}
+	for _, chunk := range chunkTokens(tokens, 100) {
+		payload, _ := json.Marshal(map[string]any{
+			"to":       chunk,
+			"title":    title,
+			"body":     truncate(text, 1000),
+			"sound":    "default",
+			"priority": "high",
+		})
+		resp, err := client.Post(expoPushURL, "application/json", bytes.NewReader(payload))
+		if err != nil {
+			return err
+		}
+		var receipts struct {
+			Data []struct {
+				Status  string `json:"status"`
+				Details *struct {
+					Error string `json:"error"`
+				} `json:"details"`
+			} `json:"data"`
+			Errors []struct {
+				Message string `json:"message"`
+			} `json:"errors"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&receipts); err != nil {
+			resp.Body.Close()
+			return err
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("expo push api: %s", resp.Status)
+		}
+		for i, r := range receipts.Data {
+			if r.Status == "error" && r.Details != nil &&
+				r.Details.Error == "DeviceNotRegistered" && i < len(chunk) {
+				_, _ = db.Exec(`DELETE FROM push_tokens WHERE token=$1`, chunk[i])
+			}
+		}
+	}
+	return nil
+}
+
+func chunkTokens(tokens []string, size int) [][]string {
+	var out [][]string
+	for len(tokens) > 0 {
+		n := size
+		if len(tokens) < n {
+			n = len(tokens)
+		}
+		out = append(out, tokens[:n])
+		tokens = tokens[n:]
+	}
+	return out
 }
 
 // Test sends a probe message via each enabled channel and reports per-channel
 // results synchronously (used by the Settings "Send test" button).
-func Test(db *database.DB) (telegram, email string) {
+func Test(db *database.DB) (telegram, email, push string) {
 	m := settings(db)
 	if !on(m, KeyEnabled) {
-		return "disabled", "disabled"
+		return "disabled", "disabled", "disabled"
 	}
 	if !on(m, KeyTgEnabled) {
 		telegram = "disabled"
@@ -177,7 +285,21 @@ func Test(db *database.DB) (telegram, email string) {
 	} else {
 		email = "sent"
 	}
-	return telegram, email
+	var devices int
+	_ = db.QueryRow(`SELECT COUNT(*) FROM push_tokens`).Scan(&devices)
+	switch {
+	case !pushChannelOn(m):
+		push = "disabled"
+	case devices == 0:
+		push = "no devices"
+	default:
+		if err := sendPush(db, "ServerHub test signal", "ServerHub test signal — notifications are wired up."); err != nil {
+			push = "failed: " + err.Error()
+		} else {
+			push = "sent"
+		}
+	}
+	return telegram, email, push
 }
 
 func sendTelegram(m map[string]string, text string) error {

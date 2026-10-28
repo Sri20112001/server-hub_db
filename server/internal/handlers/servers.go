@@ -4,6 +4,8 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"log"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -25,9 +27,15 @@ type ServersHandler struct {
 
 func (h *ServersHandler) List(c *gin.Context) {
 	rows, err := h.DB.Query(`
-		SELECT id,name,hostname,ip_address,os,os_version,arch,cpu_info,cpu_cores,
-		       ram_total,disk_total,status,agent_status,last_heartbeat,group_id,created_at,updated_at
-		FROM managed_servers ORDER BY name`)
+		SELECT s.id,s.name,s.hostname,s.ip_address,s.os,s.os_version,s.arch,s.cpu_info,s.cpu_cores,
+		       s.ram_total,s.disk_total,s.status,s.agent_status,s.last_heartbeat,s.group_id,s.created_at,s.updated_at,
+		       m.cpu_usage, m.memory_usage, m.disk_usage
+		FROM managed_servers s
+		LEFT JOIN (
+			SELECT DISTINCT ON (server_id) server_id, cpu_usage, memory_usage, disk_usage
+			FROM server_metrics ORDER BY server_id, timestamp DESC
+		) m ON m.server_id = s.id
+		ORDER BY s.name`)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -50,9 +58,15 @@ func (h *ServersHandler) Get(c *gin.Context) {
 		return
 	}
 	rows, err := h.DB.Query(`
-		SELECT id,name,hostname,ip_address,os,os_version,arch,cpu_info,cpu_cores,
-		       ram_total,disk_total,status,agent_status,last_heartbeat,group_id,created_at,updated_at
-		FROM managed_servers WHERE id=$1`, id)
+		SELECT s.id,s.name,s.hostname,s.ip_address,s.os,s.os_version,s.arch,s.cpu_info,s.cpu_cores,
+		       s.ram_total,s.disk_total,s.status,s.agent_status,s.last_heartbeat,s.group_id,s.created_at,s.updated_at,
+		       m.cpu_usage, m.memory_usage, m.disk_usage
+		FROM managed_servers s
+		LEFT JOIN (
+			SELECT DISTINCT ON (server_id) server_id, cpu_usage, memory_usage, disk_usage
+			FROM server_metrics WHERE server_id=$1 ORDER BY server_id, timestamp DESC
+		) m ON m.server_id = s.id
+		WHERE s.id=$1`, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -253,10 +267,10 @@ func (h *ServersHandler) IngestMetrics(c *gin.Context) {
 		MemoryUsedMB float64 `json:"memoryUsedMB"`
 		DiskUsage    float64 `json:"diskUsage"`
 		DiskUsedGB   float64 `json:"diskUsedGB"`
-		NetRx        int64   `json:"netRx"`
-		NetTx        int64   `json:"netTx"`
+		NetRx        uint64  `json:"netRx"`
+		NetTx        uint64  `json:"netTx"`
 		LoadAvg1     float64 `json:"loadAvg1"`
-		UptimeSec    int64   `json:"uptimeSec"`
+		UptimeSec    uint64  `json:"uptimeSec"`
 		// System info (optional, updates managed_servers row)
 		Hostname  string `json:"hostname"`
 		OS        string `json:"os"`
@@ -264,14 +278,22 @@ func (h *ServersHandler) IngestMetrics(c *gin.Context) {
 		Arch      string `json:"arch"`
 		CPUInfo   string `json:"cpuInfo"`
 		CPUCores  int    `json:"cpuCores"`
-		RAMTotal  int64  `json:"ramTotal"`
-		DiskTotal int64  `json:"diskTotal"`
+		RAMTotal  uint64 `json:"ramTotal"`
+		DiskTotal uint64 `json:"diskTotal"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	now := time.Now().UTC()
+
+	toSignedInt64 := func(u uint64) int64 {
+		if u > math.MaxInt64 {
+			return math.MaxInt64
+		}
+		return int64(u)
+	}
+
 	// Store metric snapshot.
 	_, err := h.DB.Exec(`
 		INSERT INTO server_metrics
@@ -280,28 +302,28 @@ func (h *ServersHandler) IngestMetrics(c *gin.Context) {
 		serverID, now,
 		body.CPUUsage, body.MemoryUsage, body.MemoryUsedMB,
 		body.DiskUsage, body.DiskUsedGB,
-		body.NetRx, body.NetTx, body.LoadAvg1, body.UptimeSec)
+		toSignedInt64(body.NetRx), toSignedInt64(body.NetTx), body.LoadAvg1, toSignedInt64(body.UptimeSec))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	// Update server info fields if provided.
-	if body.Hostname != "" || body.OS != "" {
-		_, _ = h.DB.Exec(`
-			UPDATE managed_servers SET
-			  hostname=CASE WHEN $1!='' THEN $1 ELSE hostname END,
-			  os=CASE WHEN $2!='' THEN $2 ELSE os END,
-			  os_version=CASE WHEN $3!='' THEN $3 ELSE os_version END,
-			  arch=CASE WHEN $4!='' THEN $4 ELSE arch END,
-			  cpu_info=CASE WHEN $5!='' THEN $5 ELSE cpu_info END,
-			  cpu_cores=CASE WHEN $6>0 THEN $6 ELSE cpu_cores END,
-			  ram_total=CASE WHEN $7>0 THEN $7 ELSE ram_total END,
-			  disk_total=CASE WHEN $8>0 THEN $8 ELSE disk_total END,
-			  last_heartbeat=$9, agent_status='CONNECTED', status='ONLINE', updated_at=$9
-			WHERE id=$10`,
-			body.Hostname, body.OS, body.OSVersion, body.Arch,
-			body.CPUInfo, body.CPUCores, body.RAMTotal, body.DiskTotal,
-			now, serverID)
+	// Update server info & heartbeat in managed_servers.
+	if _, err := h.DB.Exec(`
+		UPDATE managed_servers SET
+		  hostname=CASE WHEN $1!='' THEN $1 ELSE hostname END,
+		  os=CASE WHEN $2!='' THEN $2 ELSE os END,
+		  os_version=CASE WHEN $3!='' THEN $3 ELSE os_version END,
+		  arch=CASE WHEN $4!='' THEN $4 ELSE arch END,
+		  cpu_info=CASE WHEN $5!='' THEN $5 ELSE cpu_info END,
+		  cpu_cores=CASE WHEN $6>0 THEN $6 ELSE cpu_cores END,
+		  ram_total=CASE WHEN $7::bigint>0 THEN $7::bigint ELSE ram_total END,
+		  disk_total=CASE WHEN $8::bigint>0 THEN $8::bigint ELSE disk_total END,
+		  last_heartbeat=$9, agent_status='CONNECTED', status='ONLINE', updated_at=$9
+		WHERE id=$10`,
+		body.Hostname, body.OS, body.OSVersion, body.Arch,
+		body.CPUInfo, body.CPUCores, toSignedInt64(body.RAMTotal), toSignedInt64(body.DiskTotal),
+		now, serverID); err != nil {
+		log.Printf("ERROR updating managed_servers: %v", err)
 	}
 	if h.Broker != nil {
 		h.Broker.Publish("server.metrics", gin.H{
@@ -449,12 +471,18 @@ func (h *AlertsHandler) List(c *gin.Context) {
 	var err error
 	if status != "" {
 		rows, err = h.DB.Query(`
-			SELECT id,server_id,condition,threshold,severity,status,message,triggered_at,resolved_at
-			FROM alerts WHERE status=$1 ORDER BY triggered_at DESC LIMIT 200`, status)
+			SELECT a.id,a.server_id,a.condition,a.threshold,a.severity,a.status,a.message,a.triggered_at,a.resolved_at,
+			       COALESCE(s.name, '') AS server_name
+			FROM alerts a
+			LEFT JOIN managed_servers s ON s.id = a.server_id
+			WHERE a.status=$1 ORDER BY a.triggered_at DESC LIMIT 200`, status)
 	} else {
 		rows, err = h.DB.Query(`
-			SELECT id,server_id,condition,threshold,severity,status,message,triggered_at,resolved_at
-			FROM alerts ORDER BY triggered_at DESC LIMIT 200`)
+			SELECT a.id,a.server_id,a.condition,a.threshold,a.severity,a.status,a.message,a.triggered_at,a.resolved_at,
+			       COALESCE(s.name, '') AS server_name
+			FROM alerts a
+			LEFT JOIN managed_servers s ON s.id = a.server_id
+			ORDER BY a.triggered_at DESC LIMIT 200`)
 	}
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -559,11 +587,13 @@ func scanServer(rows scannable) gin.H {
 	var lastHB *time.Time
 	var groupID *uint
 	var createdAt, updatedAt time.Time
+	var cpuUsage, memoryUsage, diskUsage *float64
 	if err := rows.Scan(&id, &name, &hostname, &ip, &os, &osv, &arch, &cpuInfo, &cpuCores,
-		&ramTotal, &diskTotal, &status, &agentStatus, &lastHB, &groupID, &createdAt, &updatedAt); err != nil {
+		&ramTotal, &diskTotal, &status, &agentStatus, &lastHB, &groupID, &createdAt, &updatedAt,
+		&cpuUsage, &memoryUsage, &diskUsage); err != nil {
 		return nil
 	}
-	return gin.H{
+	res := gin.H{
 		"id": id, "name": name, "hostname": hostname, "ipAddress": ip,
 		"os": os, "osVersion": osv, "arch": arch, "cpuInfo": cpuInfo, "cpuCores": cpuCores,
 		"ramTotal": ramTotal, "diskTotal": diskTotal,
@@ -571,6 +601,16 @@ func scanServer(rows scannable) gin.H {
 		"lastHeartbeat": lastHB, "groupId": groupID,
 		"createdAt": createdAt, "updatedAt": updatedAt,
 	}
+	if cpuUsage != nil {
+		res["cpuUsagePct"] = math.Round(*cpuUsage*10) / 10
+	}
+	if memoryUsage != nil {
+		res["ramUsagePct"] = math.Round(*memoryUsage*10) / 10
+	}
+	if diskUsage != nil {
+		res["diskUsagePct"] = math.Round(*diskUsage*10) / 10
+	}
+	return res
 }
 
 func scanAlerts(rows scannable) []gin.H {
@@ -582,12 +622,17 @@ func scanAlerts(rows scannable) []gin.H {
 		var threshold float64
 		var triggeredAt time.Time
 		var resolvedAt *time.Time
-		if err := rows.Scan(&id, &sid, &cond, &threshold, &severity, &status, &message, &triggeredAt, &resolvedAt); err == nil {
-			out = append(out, gin.H{
+		var serverName string
+		if err := rows.Scan(&id, &sid, &cond, &threshold, &severity, &status, &message, &triggeredAt, &resolvedAt, &serverName); err == nil {
+			item := gin.H{
 				"id": id, "serverId": sid, "condition": cond, "threshold": threshold,
 				"severity": severity, "status": status, "message": message,
 				"triggeredAt": triggeredAt, "resolvedAt": resolvedAt,
-			})
+			}
+			if serverName != "" {
+				item["serverName"] = serverName
+			}
+			out = append(out, item)
 		}
 	}
 	return out

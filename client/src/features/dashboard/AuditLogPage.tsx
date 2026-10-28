@@ -1,16 +1,33 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ClipboardList, RefreshCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, ClipboardList, RefreshCw } from "lucide-react";
 import { api } from "../../lib/api";
 
-export function AuditLogPage() {
-  const [limit, setLimit] = useState(100);
+const PAGE_SIZES = [25, 50, 100, 200];
 
-  const { data: logs = [], isLoading, refetch } = useQuery({
-    queryKey: ["audit", limit],
-    queryFn: () => api.audit(limit),
+export function AuditLogPage() {
+  const [pageSize, setPageSize] = useState(100);
+  const [page, setPage] = useState(0);
+
+  const { data, isLoading, refetch, isFetching } = useQuery({
+    queryKey: ["audit", "page", pageSize, page],
+    queryFn: () => api.auditPage(pageSize, page * pageSize),
     refetchInterval: 60_000,
   });
+
+  const logs = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  // If the current page fell off the end (records pruned while viewing), snap
+  // back to the last real page. Adjusted during render (React's "storing
+  // information from previous renders" pattern); guarded on a loaded query so
+  // a still-loading fetch — data undefined, total 0 — can't yank us to page 1.
+  const safePage = !isLoading && logs.length === 0 && total > 0 ? totalPages - 1 : page;
+  if (safePage !== page) setPage(safePage);
+
+  const from = total === 0 ? 0 : safePage * pageSize + 1;
+  const to = safePage * pageSize + logs.length;
 
   return (
     <div className="min-h-screen pt-20 pb-28 px-4 sm:px-6 max-w-5xl mx-auto">
@@ -24,26 +41,30 @@ export function AuditLogPage() {
             <p className="text-xs text-muted dark:text-fog">Historical operational records and user security activity</p>
           </div>
           <span className="text-muted dark:text-fog text-xs font-mono bg-paper dark:bg-panel border border-line dark:border-edge px-2.5 py-1 rounded-md">
-            {logs.length} records
+            {total} records
           </span>
         </div>
         <div className="flex items-center gap-2">
           <select
             className="bg-white dark:bg-panel border border-line dark:border-edge rounded-lg px-3 py-1.5 text-ink dark:text-bone text-xs font-mono outline-none shadow-sm"
-            value={limit}
-            onChange={(e) => setLimit(Number(e.target.value))}
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setPage(0);
+            }}
           >
-            {[50, 100, 200, 500].map((n) => (
-              <option key={n} value={n}>Last {n}</option>
+            {PAGE_SIZES.map((n) => (
+              <option key={n} value={n}>{n} / page</option>
             ))}
           </select>
           <button
             onClick={() => void refetch()}
-            className="w-9 h-9 rounded-full bg-white dark:bg-panel border border-line dark:border-edge flex items-center justify-center text-muted dark:text-fog hover:text-ink dark:hover:text-bone transition-colors shadow-sm"
+            className="w-9 h-9 rounded-full bg-white dark:bg-panel border border-line dark:border-edge flex items-center justify-center text-muted dark:text-fog hover:text-ink dark:hover:text-bone transition-colors shadow-sm disabled:opacity-50"
             title="Refresh"
             aria-label="Refresh"
+            disabled={isFetching}
           >
-            <RefreshCw size={15} />
+            <RefreshCw size={15} className={isFetching ? "animate-spin" : undefined} />
           </button>
         </div>
       </div>
@@ -81,6 +102,34 @@ export function AuditLogPage() {
             ))}
           </tbody>
         </table>
+
+        {/* Pager */}
+        <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-line dark:border-edge bg-paper/50 dark:bg-abyss/50 flex-wrap">
+          <span className="text-xs font-mono text-muted dark:text-fog">
+            Showing {from}–{to} of {total}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-mono bg-white dark:bg-panel border border-line dark:border-edge text-ink dark:text-bone hover:bg-paper dark:hover:bg-emboss transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              aria-label="Previous page"
+            >
+              <ChevronLeft size={13} /> Prev
+            </button>
+            <span className="text-xs font-mono text-muted dark:text-fog whitespace-nowrap">
+              Page {Math.min(page + 1, totalPages)} of {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page >= totalPages - 1}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-mono bg-white dark:bg-panel border border-line dark:border-edge text-ink dark:text-bone hover:bg-paper dark:hover:bg-emboss transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              aria-label="Next page"
+            >
+              Next <ChevronRight size={13} />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

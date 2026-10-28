@@ -54,7 +54,9 @@ func OpenDatabase(databaseURL string) (*DB, error) {
 		&AgentToken{},
 		&ServerMetric{},
 		&Alert{},
+		&AlertRule{},
 		&InAppNotification{},
+		&PushToken{},
 		&HealthCheck{},
 		&HealthCheckResult{},
 	} {

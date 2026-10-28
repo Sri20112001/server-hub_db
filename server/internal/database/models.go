@@ -292,6 +292,27 @@ type Alert struct {
 
 func (Alert) TableName() string { return "alerts" }
 
+// AlertRule is a user-defined per-server threshold rule. Metric is one of
+// cpu|memory|disk (percent); Operator is above|below. ServerID nil means the
+// rule applies to every managed server. ForSec is the sustained-breach
+// window in seconds (0 = evaluate the latest sample only).
+type AlertRule struct {
+	ID          uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	ServerID    *uint     `gorm:"index" json:"serverId"`
+	Name        string    `gorm:"not null;default:''" json:"name"`
+	Metric      string    `gorm:"not null;default:cpu" json:"metric"`
+	Operator    string    `gorm:"not null;default:above" json:"operator"`
+	Threshold   float64   `gorm:"not null;default:0" json:"threshold"`
+	Severity    string    `gorm:"not null;default:WARNING" json:"severity"`
+	ForSec      int       `gorm:"not null;default:0" json:"forSec"`
+	Enabled     bool      `gorm:"not null;default:true" json:"enabled"`
+	CreatedBy   string    `gorm:"not null;default:''" json:"createdBy"`
+	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"createdAt"`
+	UpdatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updatedAt"`
+}
+
+func (AlertRule) TableName() string { return "alert_rules" }
+
 // InAppNotification is the in-app notification center entry.
 type InAppNotification struct {
 	ID        uint      `gorm:"primaryKey;autoIncrement" json:"id"`
@@ -306,6 +327,20 @@ type InAppNotification struct {
 }
 
 func (InAppNotification) TableName() string { return "in_app_notifications" }
+
+// PushToken registers a mobile device for Expo push notifications.
+// Re-registering the same token refreshes ownership (username/last use).
+// The token itself is never returned by the API (see PushTokensHandler).
+type PushToken struct {
+	ID         uint      `gorm:"primaryKey;autoIncrement" json:"id"`
+	Username   string    `gorm:"index;not null" json:"username"`
+	Token      string    `gorm:"uniqueIndex;not null" json:"-"`
+	Platform   string    `gorm:"not null;default:''" json:"platform"`
+	CreatedAt  time.Time `gorm:"index;default:CURRENT_TIMESTAMP" json:"createdAt"`
+	LastUsedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"lastUsedAt"`
+}
+
+func (PushToken) TableName() string { return "push_tokens" }
 
 // AppLog is the central activity/log store for the future log-aggregator UI.
 // Every significant event (HTTP requests, deploys, health transitions,

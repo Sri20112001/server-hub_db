@@ -30,9 +30,53 @@ GOOS=linux GOARCH=arm64 go build -o serverhub-agent .
 
 ## Run
 
+### Using Command-line Flags (Windows / Linux / macOS)
+
 ```bash
-AGENT_TOKEN=<your-token> \
-SERVERHUB_URL=http://<your-serverhub-host>:4000 \
+# Direct run with Go
+go run . -token="<your-token>" -url="http://<your-serverhub-host>:6540"
+
+# Or with compiled binary
+./serverhub-agent -token="<your-token>" -url="http://<your-serverhub-host>:6540"
+```
+
+### Windows (Command Prompt - CMD)
+
+```cmd
+set AGENT_TOKEN=<your-token>
+set SERVERHUB_URL=http://localhost:6540
+serverhub-agent.exe
+```
+Or with `go run`:
+```cmd
+set AGENT_TOKEN=<your-token>&& set SERVERHUB_URL=http://localhost:6540&& go run .
+```
+
+### Windows (PowerShell)
+
+```powershell
+$env:AGENT_TOKEN = "<your-token>"
+$env:SERVERHUB_URL = "http://localhost:6540"
+.\serverhub-agent.exe
+```
+
+### Linux / macOS / Bash
+
+```bash
+AGENT_TOKEN="<your-token>" SERVERHUB_URL="http://<your-serverhub-host>:6540" ./serverhub-agent
+```
+
+### Using `.env` file
+
+Create an `agent/.env` file:
+```ini
+AGENT_TOKEN=<your-token>
+SERVERHUB_URL=http://localhost:6540
+```
+Then simply execute:
+```bash
+go run .
+# or
 ./serverhub-agent
 ```
 

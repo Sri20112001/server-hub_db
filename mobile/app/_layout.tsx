@@ -1,8 +1,9 @@
 import "../global.css";
 import React, { useCallback, useEffect, useState } from "react";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import * as Notifications from "expo-notifications";
 import {
   useFonts,
   Inter_400Regular,
@@ -21,6 +22,18 @@ import { AnimatedSplash } from "../src/components/AnimatedSplash";
 
 SplashScreen.preventAutoHideAsync();
 
+// Foreground pushes render as a system notification (sound included);
+// taps deep-link into the in-app notification center (see below).
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -34,6 +47,7 @@ export default function RootLayout() {
   const hydrate = useAuthStore((s) => s.hydrate);
   const checked = useAuthStore((s) => s.checked);
   const loadBiometric = useBiometricStore((s) => s.load);
+  const router = useRouter();
 
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -48,6 +62,14 @@ export default function RootLayout() {
     void hydrate();
     void loadBiometric();
   }, [hydrate, loadBiometric]);
+
+  useEffect(() => {
+    // Tapping a push opens the notification center.
+    const sub = Notifications.addNotificationResponseReceivedListener(() => {
+      router.push("/(app)/notifications");
+    });
+    return () => sub.remove();
+  }, [router]);
 
   useEffect(() => {
     // Swap the native splash for the animated intro once fonts are loaded

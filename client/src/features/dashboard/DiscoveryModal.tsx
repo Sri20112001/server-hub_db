@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { Download, FolderSearch, Radar } from "lucide-react";
 import { api } from "../../lib/api";
-import type { DiscoveredProject, FoundProject } from "../../lib/types";
+import type { DiscoveredProject, FoundProject } from "../../lib/types/discovery";
 import { useUi } from "../../stores/store";
-import { EmptyState, Kicker, Modal, StatusPill } from "../../components/ui";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { Kicker } from "../../components/ui/Kicker";
+import { Modal } from "../../components/ui/Modal";
+import { StatusPill } from "../../components/ui/StatusPill";
 
 export function DiscoveryModal({
   onClose,

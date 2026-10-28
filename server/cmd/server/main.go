@@ -64,6 +64,11 @@ func main() {
 	if err := ensureAdmin(db, cfg.AdminUser, cfg.AdminPass); err != nil {
 		log.Fatalf("seed admin: %v", err)
 	}
+	if seeded, err := handlers.SeedDefaultRules(db, "system"); err != nil {
+		log.Printf("seed alert rules: %v", err)
+	} else if seeded > 0 {
+		log.Printf("seeded %d default custom alert rules", seeded)
+	}
 	// Mirror boot + startup warnings to the central DB log store
 	// (stdout alone is not enough — all logs must live in the DB).
 	bootWarningsToDB(gdb)
@@ -102,8 +107,8 @@ func main() {
 	}
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     origins,
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "Accept", "X-Requested-With"},
 		AllowCredentials: true,
 	}))
 	r.Use(middleware.RequestLog(gdb))
@@ -274,11 +279,25 @@ func main() {
 		viewer.GET("/alerts", altH.List)
 		operator.PATCH("/alerts/:id/resolve", altH.Resolve)
 
+		// Custom alert rules (user-defined per-server thresholds)
+		ruleH := &handlers.AlertRulesHandler{DB: db}
+		viewer.GET("/alert-rules", ruleH.List)
+		operator.POST("/alert-rules", ruleH.Create)
+		operator.POST("/alert-rules/seed", ruleH.Seed)
+		operator.PATCH("/alert-rules/:id", ruleH.Update)
+		admin.DELETE("/alert-rules/:id", ruleH.Delete)
+
 		// In-app notifications
 		notifH := &handlers.NotificationsInAppHandler{DB: db}
 		viewer.GET("/notifications", notifH.List)
 		viewer.PATCH("/notifications/:id/read", notifH.MarkRead)
 		viewer.POST("/notifications/read-all", notifH.MarkAllRead)
+
+		// Mobile push-token registry (any authenticated role manages its own devices)
+		pushH := &handlers.PushTokensHandler{DB: db}
+		viewer.GET("/push-tokens", pushH.List)
+		viewer.POST("/push-tokens", pushH.Register)
+		viewer.DELETE("/push-tokens", pushH.Unregister)
 
 		// Health checks
 		hcH := &handlers.HealthChecksHandler{DB: db}

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Check, Loader2, Rocket, X } from "lucide-react";
 import { api } from "../../lib/api";
-import type { Operation } from "../../lib/types";
+import type { Operation } from "../../lib/types/operations";
 import { useUi } from "../../stores/store";
-import { Modal } from "../../components/ui";
+import { Modal } from "../../components/ui/Modal";
 
 const STAGE_DOT: Record<string, string> = {
   done: "bg-moss",

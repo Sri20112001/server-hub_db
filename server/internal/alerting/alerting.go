@@ -9,6 +9,7 @@ import (
 
 	"serverhub/internal/database"
 	"serverhub/internal/events"
+	"serverhub/internal/notify"
 )
 
 const (
@@ -37,6 +38,7 @@ func StartLoop(db *database.DB, broker *events.Broker, th Thresholds) {
 func runChecks(db *database.DB, broker *events.Broker, th Thresholds) error {
 	checkOffline(db, broker)
 	checkMetricThresholds(db, broker, th)
+	checkCustomRules(db, broker)
 	return nil
 }
 
@@ -130,7 +132,11 @@ func fireAlert(db *database.DB, broker *events.Broker, serverID uint, condition 
 	if err != nil {
 		return
 	}
-	notifyAllUsers(db, serverID, severity+": "+message, message, "alert")
+	title := severity + ": " + message
+	notifyAllUsers(db, serverID, title, message, "alert")
+	// External channels (Telegram/email/push) fan out only when the admin
+	// enabled them in notification settings; per-event toggles still apply.
+	notify.Send(db, notify.EventThreshold, title, message)
 	if broker != nil {
 		broker.Publish("alert.triggered", map[string]interface{}{
 			"serverId": serverID, "condition": condition, "severity": severity, "message": message,

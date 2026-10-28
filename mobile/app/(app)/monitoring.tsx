@@ -14,7 +14,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
   AlertTriangle,
+  BellRing,
   CheckCircle,
+  Pencil,
+  Plus,
+  Trash2,
   Wifi,
   WifiOff,
   XCircle,
@@ -23,9 +27,12 @@ import {
 } from "lucide-react-native";
 import { monitoringApi } from "../../src/api/monitoring";
 import type { AmAlert, AmSilence } from "../../src/api/monitoring";
+import { rulesApi, serversApi } from "../../src/api/servers";
+import type { AlertRule, ManagedServer } from "../../src/types";
+import { useAuthStore } from "../../src/stores/authStore";
 import { colors } from "../../src/theme/colors";
 
-type Tab = "dashboard" | "alerts" | "silences";
+type Tab = "dashboard" | "alerts" | "silences" | "rules";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -502,12 +509,345 @@ function SilencesTab() {
   );
 }
 
+// ── Rules tab ───────────────────────────────────────────────────────────────────
+
+const RULE_METRICS = ["cpu", "memory", "disk"] as const;
+const RULE_OPERATORS = ["above", "below"] as const;
+const RULE_SEVERITIES = ["WARNING", "CRITICAL"] as const;
+const RULE_FOR_PRESETS = [0, 60, 300, 900];
+
+function fmtForSec(s: number): string {
+  if (s <= 0) return "instant";
+  if (s < 60) return `${s}s sustained`;
+  if (s < 3600) return `${Math.round(s / 60)}m sustained`;
+  return `${Math.round(s / 3600)}h sustained`;
+}
+
+function ChipRow<T extends string | number | null>({
+  options,
+  value,
+  onPick,
+  render,
+}: {
+  options: readonly T[];
+  value: T;
+  onPick: (v: T) => void;
+  render: (v: T) => string;
+}) {
+  return (
+    <View className="flex-row flex-wrap gap-1.5">
+      {options.map((o, i) => {
+        const active = o === value;
+        return (
+          <TouchableOpacity
+            key={`${render(o)}-${i}`}
+            onPress={() => onPick(o)}
+            className={`px-2.5 py-1 rounded-full border ${active ? "bg-ember border-ember" : "border-edge"}`}
+            accessibilityRole="button"
+          >
+            <Text className={`text-xs font-mono ${active ? "text-black font-bold" : "text-fog"}`}>
+              {render(o)}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+function RuleModal({
+  servers,
+  initial,
+  onClose,
+  onSaved,
+}: {
+  servers: ManagedServer[];
+  initial: AlertRule | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [name, setName] = useState(initial?.name ?? "");
+  const [serverId, setServerId] = useState<number | null>(initial?.serverId ?? null);
+  const [metric, setMetric] = useState<(typeof RULE_METRICS)[number]>(initial?.metric ?? "cpu");
+  const [operator, setOperator] = useState<(typeof RULE_OPERATORS)[number]>(initial?.operator ?? "above");
+  const [threshold, setThreshold] = useState(initial ? String(initial.threshold) : "90");
+  const [severity, setSeverity] = useState<(typeof RULE_SEVERITIES)[number]>(initial?.severity ?? "WARNING");
+  const [forSec, setForSec] = useState(initial ? String(initial.forSec) : "0");
+  const [enabled, setEnabled] = useState(initial?.enabled ?? true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const inputCls = "bg-abyss border border-edge rounded-lg px-3 py-2 text-bone text-sm font-mono";
+
+  const save = async () => {
+    const t = Number(threshold);
+    const f = Math.round(Number(forSec));
+    if (!Number.isFinite(t) || !Number.isFinite(f) || f < 0) {
+      setError("Threshold and window must be numbers");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const body = {
+        name: name.trim() || undefined,
+        serverId,
+        metric,
+        operator,
+        threshold: t,
+        severity,
+        forSec: f,
+        enabled,
+      };
+      if (initial) await rulesApi.update(initial.id, body);
+      else await rulesApi.create(body);
+      onSaved();
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Save failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <View className="flex-1 justify-end bg-black/60">
+        <ScrollView className="bg-panel border-t border-edge rounded-t-2xl p-5" style={{ maxHeight: "88%" }}>
+          <Text className="text-bone font-bold text-lg mb-4">{initial ? "Edit Rule" : "New Rule"}</Text>
+          <Text className="text-fog text-xs mb-1">Name (optional)</Text>
+          <TextInput value={name} onChangeText={setName} placeholder="db disk filling"
+            placeholderTextColor={colors.fog} className={`${inputCls} mb-3`} />
+          <Text className="text-fog text-xs mb-1">Scope</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
+            <View className="flex-row gap-1.5">
+              <TouchableOpacity
+                onPress={() => setServerId(null)}
+                className={`px-2.5 py-1 rounded-full border ${serverId === null ? "bg-ember border-ember" : "border-edge"}`}
+              >
+                <Text className={`text-xs font-mono ${serverId === null ? "text-black font-bold" : "text-fog"}`}>All servers</Text>
+              </TouchableOpacity>
+              {servers.map((s) => (
+                <TouchableOpacity
+                  key={s.id}
+                  onPress={() => setServerId(s.id)}
+                  className={`px-2.5 py-1 rounded-full border ${serverId === s.id ? "bg-ember border-ember" : "border-edge"}`}
+                >
+                  <Text className={`text-xs font-mono ${serverId === s.id ? "text-black font-bold" : "text-fog"}`}>{s.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+          <Text className="text-fog text-xs mb-1">Metric</Text>
+          <View className="mb-3"><ChipRow options={RULE_METRICS} value={metric} onPick={setMetric} render={(v) => v} /></View>
+          <Text className="text-fog text-xs mb-1">Condition</Text>
+          <View className="mb-3"><ChipRow options={RULE_OPERATORS} value={operator} onPick={setOperator} render={(v) => v} /></View>
+          <View className="flex-row gap-3 mb-3">
+            <View className="flex-1">
+              <Text className="text-fog text-xs mb-1">Threshold %</Text>
+              <TextInput value={threshold} onChangeText={setThreshold} keyboardType="decimal-pad"
+                placeholderTextColor={colors.fog} className={inputCls} />
+            </View>
+            <View className="flex-1">
+              <Text className="text-fog text-xs mb-1">Window (sec, 0 = instant)</Text>
+              <TextInput value={forSec} onChangeText={setForSec} keyboardType="number-pad"
+                placeholderTextColor={colors.fog} className={inputCls} />
+            </View>
+          </View>
+          <View className="mb-3"><ChipRow options={RULE_FOR_PRESETS} value={Number(forSec)} onPick={(v) => setForSec(String(v))}
+            render={(v) => (v === 0 ? "instant" : v < 60 ? `${v}s` : `${v / 60}m`)} /></View>
+          <Text className="text-fog text-xs mb-1">Severity</Text>
+          <View className="mb-3"><ChipRow options={RULE_SEVERITIES} value={severity} onPick={setSeverity} render={(v) => v} /></View>
+          <TouchableOpacity onPress={() => setEnabled(!enabled)} className="flex-row items-center gap-2 mb-4"
+            accessibilityRole="checkbox" accessibilityState={{ checked: enabled }}>
+            <View className={`w-5 h-5 rounded border items-center justify-center ${enabled ? "bg-ember border-ember" : "border-edge"}`}>
+              {enabled && <CheckCircle size={14} color="#000" />}
+            </View>
+            <Text className="text-bone text-sm">Enabled</Text>
+          </TouchableOpacity>
+          {error && <Text className="text-brick text-xs mb-3">{error}</Text>}
+          <View className="flex-row gap-2 pb-6">
+            <TouchableOpacity onPress={onClose} disabled={busy}
+              className="flex-1 bg-emboss border border-edge rounded-xl py-3 items-center">
+              <Text className="text-fog text-sm font-semibold">Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => void save()} disabled={busy}
+              className="flex-1 bg-ember rounded-xl py-3 items-center">
+              <Text className="text-black text-sm font-bold">{busy ? "Saving…" : initial ? "Save" : "Create"}</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
+function RulesTab() {
+  const qc = useQueryClient();
+  const role = useAuthStore((s) => s.user?.role);
+  const canWrite = role === "operator" || role === "admin";
+  const canDelete = role === "admin";
+  const [showAdd, setShowAdd] = useState(false);
+  const [editing, setEditing] = useState<AlertRule | null>(null);
+  const [busyId, setBusyId] = useState<number | null>(null);
+
+  const { data: rules = [], isLoading, isRefetching, refetch, error } =
+    useQuery<AlertRule[]>({
+      queryKey: ["alert-rules"],
+      queryFn: rulesApi.list,
+      refetchInterval: 30_000,
+    });
+  const { data: servers = [] } = useQuery<ManagedServer[]>({
+    queryKey: ["servers"],
+    queryFn: serversApi.list,
+    staleTime: 60_000,
+  });
+
+  const invalidate = () => void qc.invalidateQueries({ queryKey: ["alert-rules"] });
+
+  const toggle = async (rule: AlertRule) => {
+    setBusyId(rule.id);
+    try {
+      await rulesApi.update(rule.id, { enabled: !rule.enabled });
+      invalidate();
+    } catch {
+      // surfaced on next refetch; toggle is best-effort like silences
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const remove = async (rule: AlertRule) => {
+    setBusyId(rule.id);
+    try {
+      await rulesApi.remove(rule.id);
+      invalidate();
+    } catch {
+      // ignore
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  if (isLoading) return (
+    <View className="flex-1 items-center justify-center">
+      <ActivityIndicator color={colors.ember} />
+    </View>
+  );
+
+  if (error) return (
+    <View className="flex-1 items-center justify-center p-6">
+      <WifiOff size={32} color={colors.fog} />
+      <Text className="text-fog text-sm mt-3 text-center">Could not load alert rules</Text>
+      <Text className="text-fog text-xs mt-1 text-center font-mono">
+        {error instanceof Error ? error.message : "Unknown error"}
+      </Text>
+    </View>
+  );
+
+  const enabledCount = rules.filter((r) => r.enabled).length;
+
+  return (
+    <>
+      <ScrollView
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} tintColor={colors.ember} />
+        }
+      >
+        <View className="flex-row items-center justify-between mb-3">
+          <Text className="text-fog text-xs font-mono">
+            {enabledCount} on · {rules.length} total
+          </Text>
+          {canWrite && (
+            <TouchableOpacity onPress={() => setShowAdd(true)}
+              className="flex-row items-center gap-1 bg-ember rounded-lg px-2.5 py-1.5"
+              accessibilityRole="button" accessibilityLabel="Add rule">
+              <Plus size={13} color="#000" />
+              <Text className="text-black text-xs font-bold">Add Rule</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {rules.length === 0 ? (
+          <View className="items-center py-16">
+            <BellRing size={36} color={colors.fog} />
+            <Text className="text-fog text-sm mt-3">No custom rules yet.</Text>
+            <Text className="text-fog text-xs mt-1 text-center">Built-in thresholds still apply.</Text>
+          </View>
+        ) : (
+          rules.map((r) => (
+            <View key={r.id} className="bg-panel border border-edge rounded-xl p-4 mb-3">
+              <View className="flex-row items-start justify-between gap-2">
+                <View className="flex-row items-center gap-2 flex-1 min-w-0">
+                  <View className="w-2 h-2 rounded-full" style={{ backgroundColor: r.enabled ? colors.moss : colors.fog }} />
+                  <View className="flex-1 min-w-0">
+                    <Text className="text-bone font-semibold text-sm" numberOfLines={1}>{r.name}</Text>
+                    <Text className="text-fog text-[11px] font-mono" numberOfLines={1}>
+                      {r.serverName ?? "All servers"}
+                    </Text>
+                  </View>
+                </View>
+                <Text className="font-mono text-[11px] font-bold"
+                  style={{ color: r.severity === "CRITICAL" ? "#f87171" : "#facc15" }}>
+                  {r.severity}
+                </Text>
+              </View>
+              <Text className="text-fog text-xs font-mono mt-1.5">
+                {r.metric} {r.operator} {r.threshold}% · {fmtForSec(r.forSec)}
+              </Text>
+              {(canWrite || canDelete) && (
+                <View className="flex-row gap-2 mt-2.5">
+                  {canWrite && (
+                    <TouchableOpacity onPress={() => void toggle(r)} disabled={busyId === r.id}
+                      className="bg-emboss border border-edge rounded-lg px-2.5 py-1.5"
+                      accessibilityRole="button" accessibilityLabel="Toggle rule">
+                      <Text className="text-bone text-xs font-mono">{busyId === r.id ? "…" : r.enabled ? "ON" : "OFF"}</Text>
+                    </TouchableOpacity>
+                  )}
+                  {canWrite && (
+                    <TouchableOpacity onPress={() => setEditing(r)}
+                      className="bg-emboss border border-edge rounded-lg px-2.5 py-1.5"
+                      accessibilityRole="button" accessibilityLabel="Edit rule">
+                      <Pencil size={13} color={colors.fog} />
+                    </TouchableOpacity>
+                  )}
+                  {canDelete && (
+                    <TouchableOpacity onPress={() => void remove(r)} disabled={busyId === r.id}
+                      className="bg-emboss border border-edge rounded-lg px-2.5 py-1.5"
+                      accessibilityRole="button" accessibilityLabel="Delete rule">
+                      <Trash2 size={13} color={colors.brick} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+            </View>
+          ))
+        )}
+      </ScrollView>
+
+      {(showAdd || editing) && (
+        <RuleModal
+          servers={servers}
+          initial={editing}
+          onClose={() => {
+            setShowAdd(false);
+            setEditing(null);
+          }}
+          onSaved={invalidate}
+        />
+      )}
+    </>
+  );
+}
+
 // ── Main screen ───────────────────────────────────────────────────────────────
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "dashboard", label: "Dashboard" },
   { id: "alerts", label: "Alerts" },
   { id: "silences", label: "Silences" },
+  { id: "rules", label: "Rules" },
 ];
 
 export default function MonitoringScreen() {
@@ -556,6 +896,7 @@ export default function MonitoringScreen() {
         {tab === "dashboard" && <DashboardTab />}
         {tab === "alerts" && <AlertsTab />}
         {tab === "silences" && <SilencesTab />}
+        {tab === "rules" && <RulesTab />}
       </View>
     </SafeAreaView>
   );
