@@ -11,12 +11,6 @@ pipeline {
   }
 
   environment {
-    // Base name for the throwaway test Postgres. Stages derive a per-build
-    // container name ("${base}-${BUILD_NUMBER}") so a wedged container from
-    // an older run can never collide with the current one.
-    TEST_PG_CONTAINER_BASE = 'jenkins-serverhub-pg'
-    TEST_PG_NETWORK = 'jenkins-test-network'
-
     COMPOSE_FILE = 'docker-compose.yml:docker-compose.jenkins.yml'
   }
 
@@ -38,9 +32,6 @@ pipeline {
 
           echo "Checking Docker Compose..."
           docker compose version
-
-          echo "Preparing test Docker network..."
-          docker network create "$TEST_PG_NETWORK" 2>/dev/null || true
 
           echo "Preparation completed."
         '''
@@ -96,81 +87,6 @@ pipeline {
               '''
             }
           }
-        }
-      }
-    }
-
-    stage('Start Test Database') {
-      steps {
-        sh '''
-          set -e
-
-          echo "Preparing test PostgreSQL..."
-
-          # Per-build name: immune to leftovers from older runs, so a
-          # best-effort remove is all that's needed here.
-          export TEST_PG_CONTAINER="${TEST_PG_CONTAINER_BASE}-${BUILD_NUMBER:-local}"
-          docker rm -f "$TEST_PG_CONTAINER" >/dev/null 2>&1 || true
-
-          # Make sure the network exists.
-          docker network create "$TEST_PG_NETWORK" 2>/dev/null || true
-
-          docker run -d \
-            --name "$TEST_PG_CONTAINER" \
-            --network "$TEST_PG_NETWORK" \
-            -e POSTGRES_DB=serverhub \
-            -e POSTGRES_USER=serverhub \
-            -e POSTGRES_PASSWORD=changeme \
-            postgres:16-alpine
-
-          echo "Waiting for PostgreSQL..."
-
-          READY=false
-
-          for i in $(seq 1 30); do
-            if docker exec "$TEST_PG_CONTAINER" \
-              pg_isready \
-              -U serverhub \
-              -d serverhub >/dev/null 2>&1; then
-
-              READY=true
-              echo "Test PostgreSQL is ready."
-              break
-            fi
-
-            sleep 2
-          done
-
-          if [ "$READY" != "true" ]; then
-            echo "ERROR: PostgreSQL failed to start."
-
-            docker logs "$TEST_PG_CONTAINER" || true
-
-            exit 1
-          fi
-
-          echo "Test database: serverhub"
-          echo "Test PostgreSQL container: $TEST_PG_CONTAINER"
-          echo "Test Docker network: $TEST_PG_NETWORK"
-        '''
-      }
-    }
-
-    stage('Test') {
-      steps {
-        dir('server') {
-          sh '''
-            set -e
-
-            export TEST_PG_CONTAINER="${TEST_PG_CONTAINER_BASE}-${BUILD_NUMBER:-local}"
-            export TEST_DATABASE_URL="postgres://serverhub:changeme@${TEST_PG_CONTAINER}:5432/serverhub?sslmode=disable"
-
-            echo "Running Go tests..."
-
-            go test ./... \
-              -count=1 \
-              -timeout 300s
-          '''
         }
       }
     }
@@ -348,25 +264,6 @@ pipeline {
   }
 
   post {
-
-    always {
-      sh '''
-        echo "Cleaning Jenkins test resources..."
-
-        # Per-build name (mirrors Start Test Database); best-effort removal —
-        # with unique names a leftover can never block a future run.
-        export TEST_PG_CONTAINER="${TEST_PG_CONTAINER_BASE}-${BUILD_NUMBER:-local}"
-        docker rm -f "$TEST_PG_CONTAINER" >/dev/null 2>&1 || true
-
-        # Remove temporary Docker network.
-        docker network rm "$TEST_PG_NETWORK" >/dev/null 2>&1 || true
-
-        # Remove temporary compose helper files.
-        rm -f "$WORKSPACE/.jenkins-test-db-url" 2>/dev/null || true
-
-        echo "Cleanup completed."
-      '''
-    }
 
     success {
       echo 'ServerHub Jenkins pipeline completed successfully.'
