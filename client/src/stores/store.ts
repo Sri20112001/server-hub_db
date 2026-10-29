@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { api } from "../lib/api";
+import { setStoredToken } from "../lib/api/http";
 import type { User } from "../lib/types/auth";
 
 interface AuthState {
@@ -23,6 +24,7 @@ export const useAuth = create<AuthState>((set) => ({
       const me = await api.me();
       set({ user: me, checked: true });
     } catch {
+      setStoredToken(null);
       set({ user: null, checked: true });
     }
   },
@@ -31,8 +33,12 @@ export const useAuth = create<AuthState>((set) => ({
     set({ busy: true, error: null });
     try {
       const res = await api.login(username, password);
+      if (res.token) {
+        setStoredToken(res.token);
+      }
       set({ user: { username: res.username, role: res.role }, busy: false });
     } catch (e) {
+      setStoredToken(null);
       set({ busy: false, error: e instanceof Error ? e.message : "Login failed" });
       throw e;
     }
@@ -42,6 +48,7 @@ export const useAuth = create<AuthState>((set) => ({
     try {
       await api.logout();
     } finally {
+      setStoredToken(null);
       set({ user: null });
     }
   },

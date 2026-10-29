@@ -29,19 +29,33 @@ type AuthHandler struct {
 	Cfg *config.Config
 }
 
+// isSecureCookie determines whether the Secure flag should be attached to session cookies.
+// If COOKIE_SECURE is true, we only set Secure if the request is actually TLS (HTTPS)
+// or forwarded by a TLS terminating reverse proxy (X-Forwarded-Proto: https).
+// When accessing directly over plain HTTP (e.g. http://<ip>:4000), setting Secure
+// forces modern browsers to drop the cookie completely per RFC 6265bis.
+func isSecureCookie(c *gin.Context, cfg *config.Config) bool {
+	if !cfg.CookieSecure {
+		return false
+	}
+	return c.Request.TLS != nil || c.GetHeader("X-Forwarded-Proto") == "https"
+}
+
 // setSessionCookies writes the access + refresh cookies. SameSite=Lax blocks
 // cross-site cookie sends (CSRF) while keeping top-level navigation logins
 // working; Secure follows COOKIE_SECURE (true behind the TLS proxy).
 func setSessionCookies(c *gin.Context, cfg *config.Config, access, refresh string) {
+	secure := isSecureCookie(c, cfg)
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("serverhub_session", access, int(accessTTL.Seconds()), "/", cfg.CookieDomain, cfg.CookieSecure, true)
-	c.SetCookie("serverhub_refresh", refresh, int(refreshTTL.Seconds()), "/", cfg.CookieDomain, cfg.CookieSecure, true)
+	c.SetCookie("serverhub_session", access, int(accessTTL.Seconds()), "/", cfg.CookieDomain, secure, true)
+	c.SetCookie("serverhub_refresh", refresh, int(refreshTTL.Seconds()), "/", cfg.CookieDomain, secure, true)
 }
 
 func clearSessionCookies(c *gin.Context, cfg *config.Config) {
+	secure := isSecureCookie(c, cfg)
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("serverhub_session", "", -1, "/", cfg.CookieDomain, cfg.CookieSecure, true)
-	c.SetCookie("serverhub_refresh", "", -1, "/", cfg.CookieDomain, cfg.CookieSecure, true)
+	c.SetCookie("serverhub_session", "", -1, "/", cfg.CookieDomain, secure, true)
+	c.SetCookie("serverhub_refresh", "", -1, "/", cfg.CookieDomain, secure, true)
 }
 
 func signAccess(cfg *config.Config, username, role string) (string, error) {
