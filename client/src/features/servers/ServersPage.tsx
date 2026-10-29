@@ -5,17 +5,19 @@ import { ServerGroupFilter } from "../../components/ServerGroupFilter";
 import { ServerStatsRow } from "../../components/ServerStatsRow";
 import { AddServerModal } from "../../components/AddServerModal";
 import { useServers } from "../../hooks/useServers";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 // Servers shell: header, fleet tallies, group filter, server grid and the
 // add-server modal. Queries and actions come from useServers.
 export function ServersPage({ setOnline }: { setOnline: (v: boolean) => void }) {
+  useDocumentTitle("Servers");
   const nav = useNavigate();
   const d = useServers(setOnline);
 
   return (
-    <div className="min-h-screen pt-20 pb-28 px-4 sm:px-6 max-w-6xl mx-auto">
+    <div className="min-h-screen pt-20 pb-36 px-4 sm:px-6 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <span className="w-9 h-9 rounded-full bg-accent/10 dark:bg-ember/10 flex items-center justify-center text-accent dark:text-ember">
             <Server size={20} />

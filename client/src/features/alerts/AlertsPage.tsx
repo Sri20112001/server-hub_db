@@ -5,6 +5,7 @@ import { api } from "../../lib/api";
 import type { Alert } from "../../lib/types/alerts";
 import { useEvents } from "../../lib/useEvents";
 import { useUi } from "../../stores/store";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 const SEVERITY_STYLE: Record<string, string> = {
   CRITICAL: "border-red-500/40 bg-red-500/10 text-red-800 dark:text-red-300",
@@ -30,7 +31,7 @@ function AlertRow({ alert, onResolve }: { alert: Alert; onResolve: () => void })
   };
 
   return (
-    <div className={`flex items-start justify-between p-4 rounded-card border mb-3 transition-colors ${SEVERITY_STYLE[alert.severity] ?? SEVERITY_STYLE.WARNING}`}>
+    <div className={`flex flex-col sm:flex-row sm:items-start justify-between p-4 rounded-card border mb-3 transition-colors gap-3 ${SEVERITY_STYLE[alert.severity] ?? SEVERITY_STYLE.WARNING}`}>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1.5 flex-wrap">
           <span className="text-xs font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-black/5 dark:bg-white/10">
@@ -54,7 +55,7 @@ function AlertRow({ alert, onResolve }: { alert: Alert; onResolve: () => void })
         <button
           onClick={resolve}
           disabled={busy}
-          className="ml-4 shrink-0 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-white/80 dark:bg-black/40 border border-current hover:bg-white dark:hover:bg-black/60 shadow-sm transition-all disabled:opacity-40"
+          className="self-start sm:self-auto sm:ml-4 shrink-0 flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-white/80 dark:bg-black/40 border border-current hover:bg-white dark:hover:bg-black/60 shadow-sm transition-all disabled:opacity-40 cursor-pointer"
         >
           <CheckCircle size={13} /> Resolve
         </button>
@@ -83,6 +84,8 @@ export function AlertsPage() {
   const resolved = alerts.filter((a) => a.status === "RESOLVED");
   const shown = tab === "TRIGGERED" ? triggered : tab === "RESOLVED" ? resolved : alerts;
 
+  useDocumentTitle(triggered.length > 0 ? `(${triggered.length}) Alerts` : "Alerts");
+
   const tabOptions = [
     { key: "TRIGGERED" as const, label: "Triggered", count: triggered.length },
     { key: "RESOLVED" as const, label: "Resolved", count: resolved.length },
@@ -90,7 +93,7 @@ export function AlertsPage() {
   ];
 
   return (
-    <div className="min-h-screen pt-20 pb-28 px-4 sm:px-6 max-w-4xl mx-auto">
+    <div className="min-h-screen pt-20 pb-36 px-4 sm:px-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <span className="w-9 h-9 rounded-full bg-accent/10 dark:bg-ember/10 flex items-center justify-center text-accent dark:text-ember">

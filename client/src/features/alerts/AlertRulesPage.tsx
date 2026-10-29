@@ -6,11 +6,13 @@ import { AlertRuleTemplates } from "../../components/AlertRuleTemplates";
 import { RuleCard } from "../../components/RuleCard";
 import { RuleModal } from "../../components/RuleModal";
 import { useAlertRules } from "../../hooks/useAlertRules";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 // Alert rules shell: header, stats, template gallery, filters, list and the
 // create/edit modal. Queries, actions and filter state come from
 // useAlertRules; sections live in their own files.
 export function AlertRulesPage() {
+  useDocumentTitle("Alert Rules");
   const a = useAlertRules();
 
   return (

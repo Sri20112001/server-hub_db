@@ -39,7 +39,7 @@ export function useServerDetail(serverId: number, setOnline: (v: boolean) => voi
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [agentCliPlatform, setAgentCliPlatform] = useState<AgentCliPlatform>("flag");
+  const [agentCliPlatform, setAgentCliPlatform] = useState<AgentCliPlatform>("installer");
 
   const { data: server, isLoading, isError, isSuccess, refetch: refetchServer } = useQuery({
     queryKey: ["server", serverId],

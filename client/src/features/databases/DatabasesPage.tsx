@@ -8,10 +8,12 @@ import { btnGhost, inputCls } from "../../utils/databaseTokens";
 import { DatabaseBrowser } from "../../components/DatabaseBrowser";
 import { ServerListItem } from "../../components/ServerListItem";
 import { useDatabases } from "../../hooks/useDatabases";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 // Databases shell: page header, left server explorer (search, engine pills,
 // list) and the right browser column. Data and actions come from useDatabases.
 export function DatabasesPage({ setOnline }: { setOnline: (v: boolean) => void }) {
+  useDocumentTitle("Databases");
   const nav = useNavigate();
   const d = useDatabases(setOnline);
 

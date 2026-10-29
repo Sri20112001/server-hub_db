@@ -8,6 +8,7 @@ import { ServerMonitoringTab } from "../../components/ServerMonitoringTab";
 import { ServerOverviewTab } from "../../components/ServerOverviewTab";
 import { ServerTokensTab } from "../../components/ServerTokensTab";
 import { useServerDetail, type ServerTab } from "../../hooks/useServerDetail";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 // Server detail: shell only — loading/missing states, tab bar and the delete
 // confirmation. Data and actions come from useServerDetail; tab bodies are the
@@ -18,8 +19,9 @@ export function ServerDetailPage({ setOnline }: { setOnline: (v: boolean) => voi
   const serverId = Number(id);
 
   const d = useServerDetail(serverId, setOnline);
-
   const server = d.server;
+
+  useDocumentTitle(server ? `${server.name}` : "Server Details");
 
   if (d.isLoading) {
     return (
@@ -66,7 +68,7 @@ export function ServerDetailPage({ setOnline }: { setOnline: (v: boolean) => voi
   ];
 
   return (
-    <div className="min-h-screen pt-20 pb-28 px-4 sm:px-6 max-w-5xl mx-auto">
+    <div className="min-h-screen pt-20 pb-36 px-4 sm:px-6 max-w-5xl mx-auto">
       <ServerHeader
         server={server}
         isOnline={isOnline}

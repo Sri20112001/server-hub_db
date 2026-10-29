@@ -6,7 +6,17 @@ Lightweight Go agent that runs on a managed Linux server and reports heartbeat +
 
 - An agent token generated from the ServerHub web UI (Servers → select server → Agent Tokens → Generate)
 
-## Install
+## Quick Install on Linux (1-Step Auto-Service)
+
+Run the included [`install.sh`](./install.sh) script on your Linux server. It automatically copies the binary to `/usr/local/bin`, generates the `systemd` unit, enables auto-start on reboot, and launches the service immediately:
+
+```bash
+sudo ./install.sh -token="<your-token>" -url="http://<your-serverhub-host>:4000"
+```
+
+---
+
+## Manual Install & Build
 
 ```bash
 # On the managed server

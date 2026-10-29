@@ -4,6 +4,7 @@ import { Activity, Plus, RefreshCw, Trash2, ChevronDown, ChevronUp } from "lucid
 import { api } from "../../lib/api";
 import type { HealthCheck } from "../../lib/types/health";
 import { useUi } from "../../stores/store";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 const STATUS_COLOR: Record<string, string> = {
   UP: "text-green-600 dark:text-green-400", DOWN: "text-red-600 dark:text-red-400", UNKNOWN: "text-zinc-500 dark:text-zinc-400",
@@ -201,9 +202,11 @@ export function HealthChecksPage() {
   const up = checks.filter((c) => c.status === "UP").length;
   const down = checks.filter((c) => c.status === "DOWN").length;
 
+  useDocumentTitle(down > 0 ? `(${down} down) Health Checks` : "Health Checks");
+
   return (
-    <div className="min-h-screen pt-20 pb-28 px-4 sm:px-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="min-h-screen pt-20 pb-36 px-4 sm:px-6 max-w-4xl mx-auto">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <span className="w-9 h-9 rounded-full bg-accent/10 dark:bg-ember/10 flex items-center justify-center text-accent dark:text-ember">
             <Activity size={20} />

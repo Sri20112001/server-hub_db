@@ -1,7 +1,9 @@
 import { Link, useLocation } from "react-router";
 import { Activity, Terminal, ExternalLink, ShieldAlert, Route } from "lucide-react";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 export function NotFoundPage() {
+  useDocumentTitle("404 Lost in the Void");
   const location = useLocation();
 
   return (

@@ -3,12 +3,14 @@ import { TelemetryDetail } from "../../components/TelemetryDetail";
 import { TelemetryInventory } from "../../components/TelemetryInventory";
 import { TelemetryStorage } from "../../components/TelemetryStorage";
 import { useTelemetry } from "../../hooks/useTelemetry";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 // Telemetry shell: page header, range switcher, then the history charts and
 // the one-shot host detail, storage and inventory sections inside a single
 // flex column. Data fetching lives in useTelemetry; each section is its own
 // file.
 export function TelemetryPage() {
+  useDocumentTitle("Host Telemetry");
   const t = useTelemetry();
 
   return (

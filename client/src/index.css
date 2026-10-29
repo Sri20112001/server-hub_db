@@ -155,19 +155,30 @@ a { color: inherit; }
     scrollbar-width: thin;
   }
 
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Larger tap targets on coarse pointers without restyling desktop. */
   @media (pointer: coarse) {
     button,
     select,
     input[type="checkbox"] {
-      min-height: 40px;
-    }
-    nav button {
-      min-height: 44px;
-      min-width: 44px;
+      min-height: 38px;
     }
     input[type="checkbox"] {
       min-width: 18px;
+    }
+  }
+
+  @media (pointer: coarse) and (min-width: 640px) {
+    nav button {
+      min-height: 44px;
+      min-width: 44px;
     }
   }
 

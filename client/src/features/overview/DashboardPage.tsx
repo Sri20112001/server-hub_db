@@ -25,6 +25,7 @@ import { ShipCard } from "../../components/ShipCard";
 import { StatShell, HealthRow } from "../../components/StatShell";
 import { SubOrbitalFeed } from "../../components/SubOrbitalFeed";
 import { useDashboard } from "../../hooks/useDashboard";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 // Fleet preview stays compact; the full registry lives on the Fleet page.
 export const FLEET_PREVIEW_LIMIT = 6;
@@ -37,6 +38,7 @@ export function DashboardPage({
 }: {
   setOnline: (v: boolean) => void;
 }) {
+  useDocumentTitle("Dashboard");
   const { user } = useAuth();
   const [params, setParams] = useSearchParams();
   const nav = useNavigate();

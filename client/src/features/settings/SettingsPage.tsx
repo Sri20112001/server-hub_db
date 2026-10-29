@@ -9,10 +9,12 @@ import { SettingsNotificationsTab } from "../../components/SettingsNotifications
 import { SettingsSystemTab } from "../../components/SettingsSystemTab";
 import { SettingsUsersTab } from "../../components/SettingsUsersTab";
 import { SettingsDangerTab } from "../../components/SettingsDangerTab";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 // Settings shell: page header, tab navigation, the active tab body and the
 // three confirmation modals. All state and actions come from useSettings.
 export function SettingsPage({ setOnline }: { setOnline: (v: boolean) => void }) {
+  useDocumentTitle("Settings");
   const c: SettingsController = useSettings(setOnline);
 
   if (c.loading) {

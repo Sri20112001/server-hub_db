@@ -7,6 +7,7 @@ import { useUi } from "../../stores/store";
 import { DashboardSkeleton } from "../../components/ui/DashboardSkeleton";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { ProjectDetailsBody } from "../../components/ProjectDetailsBody";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 // Project details shell: loads the ship from the route id, renders the
 // not-found / skeleton states, then hands off to ProjectDetailsBody.
@@ -16,6 +17,8 @@ export function ProjectDetailsPage({ setOnline }: { setOnline: (v: boolean) => v
   const pushToast = useUi((s) => s.pushToast);
   const [project, setProject] = useState<Project | null>(null);
   const [missing, setMissing] = useState(false);
+
+  useDocumentTitle(project ? `${project.name}` : "Ship Details");
 
   const reload = async () => {
     try {

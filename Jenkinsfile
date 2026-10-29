@@ -1,8 +1,5 @@
 // ServerHub CI/CD — Jenkins declarative pipeline.
-// Agent prerequisites: Docker + Compose, Go >= 1.26, Node 22 LTS,
-// and (for the Mobile APK stage) JDK 17 + Android SDK cmdline-tools with
-// ANDROID_HOME set (defaults to $JENKINS_HOME/android-sdk, which survives
-// container recreates because it lives in the Jenkins home volume).
+// Prerequisites: Docker + Compose, Go >= 1.24, Node 22 LTS.
 pipeline {
   agent any
 
@@ -21,8 +18,6 @@ pipeline {
     TEST_PG_NETWORK = 'jenkins-test-network'
 
     COMPOSE_FILE = 'docker-compose.yml:docker-compose.jenkins.yml'
-
-    EXPO_PUBLIC_API_URL = 'http://localhost:4000'
   }
 
   stages {
@@ -33,24 +28,24 @@ pipeline {
       }
     }
 
-stage('Prepare') {
-  steps {
-    sh '''
-      set -e
+    stage('Prepare') {
+      steps {
+        sh '''
+          set -e
 
-      echo "Checking Docker..."
-      docker --version
+          echo "Checking Docker..."
+          docker --version
 
-      echo "Checking Docker Compose..."
-      docker compose version
+          echo "Checking Docker Compose..."
+          docker compose version
 
-      echo "Preparing test Docker network..."
-      docker network create "$TEST_PG_NETWORK" 2>/dev/null || true
+          echo "Preparing test Docker network..."
+          docker network create "$TEST_PG_NETWORK" 2>/dev/null || true
 
-      echo "Preparation completed."
-    '''
-  }
-}
+          echo "Preparation completed."
+        '''
+      }
+    }
 
     stage('CI') {
       parallel {
@@ -74,25 +69,6 @@ stage('Prepare') {
           }
         }
 
-        stage('Mobile CI') {
-          steps {
-            dir('mobile') {
-              sh '''
-                set -e
-
-                echo "Installing mobile dependencies..."
-                npm ci --no-audit --no-fund
-
-                echo "Running mobile type check..."
-                npm run type-check
-
-                echo "Running mobile lint..."
-                npm run lint
-              '''
-            }
-          }
-        }
-
         stage('Server Vet') {
           steps {
             dir('server') {
@@ -101,6 +77,22 @@ stage('Prepare') {
 
                 echo "Running Go vet..."
                 go vet ./...
+              '''
+            }
+          }
+        }
+
+        stage('Agent CI') {
+          steps {
+            dir('agent') {
+              sh '''
+                set -e
+
+                echo "Running Agent vet..."
+                go vet ./...
+
+                echo "Building Agent binary..."
+                CGO_ENABLED=0 go build -ldflags="-s -w" -o serverhub-agent .
               '''
             }
           }
@@ -198,55 +190,6 @@ stage('Prepare') {
         }
       }
     }
-
-    stage('Mobile Bundle Check') {
-      steps {
-        dir('mobile') {
-          sh '''
-            set -e
-
-            echo "Validating mobile JS bundle (no token required)..."
-            export EXPO_PUBLIC_API_URL="$EXPO_PUBLIC_API_URL"
-
-            npx expo export --platform android
-          '''
-        }
-      }
-    }
-
-    stage('Mobile APK') {
-      steps {
-        dir('mobile') {
-          sh '''
-            set -e
-
-            echo "Building Android debug APK (prebuild + Gradle)..."
-
-            export EXPO_PUBLIC_API_URL="$EXPO_PUBLIC_API_URL"
-            export ANDROID_HOME="${ANDROID_HOME:-/var/jenkins_home/android-sdk}"
-            export ANDROID_SDK_ROOT="$ANDROID_HOME"
-            export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
-
-            # Set clean JVM heap ceilings without explicit GC flags
-            export GRADLE_OPTS="-Xmx2048m -XX:MaxMetaspaceSize=512m -Dorg.gradle.daemon=false -Dorg.gradle.parallel=false -Dkotlin.compiler.execution.strategy=in-process"
-            export NODE_OPTIONS="--max-old-space-size=1536"
-
-            command -v java >/dev/null 2>&1 || { echo "ERROR: JDK 17+ not found on agent."; exit 1; }
-            [ -d "$ANDROID_HOME" ] || { echo "ERROR: Android SDK not found at $ANDROID_HOME."; exit 1; }
-
-            # Accept SDK licenses automatically if prompted
-            yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
-
-            npx expo prebuild --platform android --non-interactive
-            chmod +x android/gradlew
-            (cd android && ./gradlew assembleDebug --no-daemon --max-workers=1)
-          '''
-          archiveArtifacts artifacts: 'android/app/build/outputs/apk/debug/app-debug.apk'
-        }
-      }
-    }
-
-
 
     stage('Deploy') {
       environment {

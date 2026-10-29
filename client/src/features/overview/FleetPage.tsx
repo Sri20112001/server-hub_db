@@ -11,6 +11,7 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { Kicker } from "../../components/ui/Kicker";
 import { ProjectDrawer } from "../../components/ProjectDrawer";
 import { ShipCard } from "../../components/ShipCard";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 type BulkAction = "start" | "stop" | "restart";
 
@@ -18,6 +19,7 @@ type BulkAction = "start" | "stop" | "restart";
 // Cards open the same details drawer as the dashboard preview. Tick cards
 // to run one lifecycle action across many ships at once.
 export function FleetPage({ setOnline }: { setOnline: (v: boolean) => void }) {
+  useDocumentTitle("Fleet Registry");
   const pushToast = useUi((s) => s.pushToast);
   const [params, setParams] = useSearchParams();
   const nav = useNavigate();

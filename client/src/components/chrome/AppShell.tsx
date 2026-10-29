@@ -44,37 +44,51 @@ export function AppShell({ online }: { online: boolean }) {
   };
 
   const dockBtn = (active: boolean) =>
-    `relative w-11 h-11 rounded-full flex items-center justify-center bg-transparent border-0 cursor-pointer hover:bg-paper dark:hover:bg-emboss hover:text-ink dark:hover:text-bone ${
+    `relative w-9 h-9 sm:w-11 sm:h-11 rounded-full flex items-center justify-center shrink-0 bg-transparent border-0 cursor-pointer hover:bg-paper dark:hover:bg-emboss hover:text-ink dark:hover:text-bone transition-all ${
       active ? "text-ink dark:text-bone" : "text-muted dark:text-fog"
     }`;
 
   return (
     <>
-      <Brand />
-      <button
-        className="bg-white dark:bg-panel border border-line dark:border-edge rounded-full shadow-chrome fixed top-3 sm:top-5 left-1/2 -translate-x-1/2 z-40 flex items-center justify-between gap-2 h-[42px] pl-4 pr-2 w-[calc(100vw-9.5rem)] min-w-0 min-[420px]:w-[calc(100vw-12rem)] sm:w-auto sm:min-w-[480px] text-muted dark:text-fog text-[13px] cursor-pointer hover:border-accent dark:hover:border-ember"
-        onClick={() => setPaletteOpen(true)}
-        aria-label="Search ships, pages, and actions"
-      >
-        <div className="flex items-center justify-center gap-2.5 min-w-0">
-          <Search size={15} className="shrink-0" />
-          <span className="truncate hidden min-[420px]:inline">Search ships, actions, or press</span>
-          <span className="truncate min-[420px]:hidden">Search…</span>
-        </div>
+      {/* Unified top bar — flexible layout prevents collisions across mobile, tablet, and desktop */}
+      <header className="fixed top-0 inset-x-0 z-40 pointer-events-none px-3 sm:px-6 pt-3 sm:pt-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
+          {/* Brand */}
+          <div className="pointer-events-auto flex items-center shrink-0">
+            <Brand />
+          </div>
 
-        <span className="hidden sm:flex items-center justify-center font-mono text-[11px] bg-paper dark:bg-abyss border border-line dark:border-edge rounded-md px-2.5 py-1.5 text-muted dark:text-fog">
-          ⌘ K
-        </span>
-      </button>
-      <div className="fixed top-3 sm:top-5 right-3 sm:right-6 z-40 flex items-center gap-2">
-        <NetworkStatusWidget serverOnline={online} />
-        <DeckMenu theme={theme} setTheme={setTheme} />
-      </div>
+          {/* Search Action */}
+          <div className="pointer-events-auto flex-1 flex justify-center max-w-md min-w-0 mx-2">
+            <button
+              className="bg-white dark:bg-panel border border-line dark:border-edge rounded-full shadow-chrome flex items-center justify-center sm:justify-between gap-2 h-9 sm:h-[42px] px-2.5 sm:px-4 w-9 sm:w-auto max-w-full text-muted dark:text-fog text-[13px] cursor-pointer hover:border-accent dark:hover:border-ember transition-all"
+              onClick={() => setPaletteOpen(true)}
+              aria-label="Search ships, pages, and actions"
+              title="Search (⌘K)"
+            >
+              <div className="flex items-center justify-center gap-2 min-w-0">
+                <Search size={15} className="shrink-0" />
+                <span className="truncate hidden sm:inline">Search ships, actions…</span>
+              </div>
+
+              <span className="hidden md:flex items-center justify-center font-mono text-[11px] bg-paper dark:bg-abyss border border-line dark:border-edge rounded-md px-2 py-0.5 text-muted dark:text-fog shrink-0 ml-2">
+                ⌘ K
+              </span>
+            </button>
+          </div>
+
+          {/* System status & account */}
+          <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <NetworkStatusWidget serverOnline={online} />
+            <DeckMenu theme={theme} setTheme={setTheme} />
+          </div>
+        </div>
+      </header>
 
       <Outlet />
 
       <nav
-        className="bg-white dark:bg-panel border border-line dark:border-edge rounded-full shadow-chrome fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-2 max-w-[calc(100vw-1rem)] overflow-x-auto [padding-bottom:calc(0.5rem+env(safe-area-inset-bottom,0px))]"
+        className="bg-white/95 dark:bg-panel/95 backdrop-blur-md border border-line dark:border-edge rounded-full shadow-chrome fixed bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 sm:gap-1 px-1.5 sm:px-3 py-1.5 sm:py-2 max-w-[calc(100vw-1rem)] overflow-x-auto [padding-bottom:calc(0.375rem+env(safe-area-inset-bottom,0px))] sm:[padding-bottom:calc(0.5rem+env(safe-area-inset-bottom,0px))] scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         aria-label="Primary"
       >
         <button
@@ -83,7 +97,7 @@ export function AppShell({ online }: { online: boolean }) {
           aria-label="Dashboard"
           onClick={() => onDock("/")}
         >
-          <LayoutGrid size={19} />
+          <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5" />
           {loc.pathname === "/" && (
             <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent dark:bg-ember" />
           )}
@@ -94,7 +108,7 @@ export function AppShell({ online }: { online: boolean }) {
           aria-label="Servers"
           onClick={() => onDock("/servers")}
         >
-          <Server size={19} />
+          <Server className="w-4 h-4 sm:w-5 sm:h-5" />
           {loc.pathname.startsWith("/servers") && (
             <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent dark:bg-ember" />
           )}
@@ -105,7 +119,7 @@ export function AppShell({ online }: { online: boolean }) {
           aria-label="Alerts"
           onClick={() => onDock("/alerts")}
         >
-          <AlertTriangle size={19} />
+          <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
           {loc.pathname === "/alerts" && (
             <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent dark:bg-ember" />
           )}
@@ -116,7 +130,7 @@ export function AppShell({ online }: { online: boolean }) {
           aria-label="Alert Rules"
           onClick={() => onDock("/alert-rules")}
         >
-          <BellRing size={19} />
+          <BellRing className="w-4 h-4 sm:w-5 sm:h-5" />
           {loc.pathname === "/alert-rules" && (
             <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent dark:bg-ember" />
           )}
@@ -127,7 +141,7 @@ export function AppShell({ online }: { online: boolean }) {
           aria-label="Fleet"
           onClick={() => onDock("/fleet")}
         >
-          <Ship size={19} />
+          <Ship className="w-4 h-4 sm:w-5 sm:h-5" />
           {loc.pathname === "/fleet" && (
             <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent dark:bg-ember" />
           )}
@@ -138,7 +152,7 @@ export function AppShell({ online }: { online: boolean }) {
           aria-label="Databases"
           onClick={() => onDock("/databases")}
         >
-          <Database size={19} />
+          <Database className="w-4 h-4 sm:w-5 sm:h-5" />
           {loc.pathname === "/databases" && (
             <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent dark:bg-ember" />
           )}
@@ -149,7 +163,7 @@ export function AppShell({ online }: { online: boolean }) {
           aria-label="Telemetry"
           onClick={() => onDock("/telemetry")}
         >
-          <Activity size={19} />
+          <Activity className="w-4 h-4 sm:w-5 sm:h-5" />
           {loc.pathname === "/telemetry" && (
             <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent dark:bg-ember" />
           )}
@@ -160,7 +174,7 @@ export function AppShell({ online }: { online: boolean }) {
           aria-label="Monitoring"
           onClick={() => onDock("/monitoring")}
         >
-          <BarChart2 size={19} />
+          <BarChart2 className="w-4 h-4 sm:w-5 sm:h-5" />
           {loc.pathname === "/monitoring" && (
             <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent dark:bg-ember" />
           )}
@@ -171,7 +185,7 @@ export function AppShell({ online }: { online: boolean }) {
           aria-label="Settings"
           onClick={() => onDock("/settings")}
         >
-          <SlidersHorizontal size={19} />
+          <SlidersHorizontal className="w-4 h-4 sm:w-5 sm:h-5" />
           {loc.pathname === "/settings" && (
             <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent dark:bg-ember" />
           )}
@@ -180,7 +194,7 @@ export function AppShell({ online }: { online: boolean }) {
 
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
 
-      <div className="fixed bottom-24 sm:bottom-6 right-3 sm:right-6 z-[80] flex flex-col gap-2 max-w-[min(360px,calc(100vw-1.5rem))]">
+      <div className="fixed bottom-20 sm:bottom-6 right-3 sm:right-6 z-[80] flex flex-col gap-2 max-w-[min(360px,calc(100vw-1.5rem))]">
         {toasts.map((t) => (
           <div
             key={t.id}

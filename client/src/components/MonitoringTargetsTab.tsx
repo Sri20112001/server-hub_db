@@ -32,8 +32,8 @@ export function MonitoringTargetsTab() {
       <div className="font-mono text-[12px] text-muted dark:text-fog">
         {up} / {all.length} targets up
       </div>
-      <div className="bg-white dark:bg-panel border border-line dark:border-edge rounded-xl overflow-hidden">
-        <table className="w-full border-collapse text-[13px]">
+      <div className="bg-white dark:bg-panel border border-line dark:border-edge rounded-xl overflow-x-auto">
+        <table className="w-full min-w-[620px] sm:min-w-0 border-collapse text-[13px]">
           <thead>
             <tr>
               {["Job", "Instance", "Health", "Last scrape", "Duration", "Error"].map(h => (

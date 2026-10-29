@@ -3,8 +3,10 @@ import { useNavigate } from "react-router";
 import { ShipWheel } from "lucide-react";
 import { useAuth, useUi } from "../../stores/store";
 import { Field } from "../../components/ui/Field";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 export function LoginPage() {
+  useDocumentTitle("Sign In");
   const nav = useNavigate();
   const { login, busy, error } = useAuth();
   const pushToast = useUi((s) => s.pushToast);

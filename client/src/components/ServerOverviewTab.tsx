@@ -1,7 +1,7 @@
 import { Clock, Copy, Cpu, Globe, HardDrive, Layers, Server, Shield, Terminal, Zap } from "lucide-react";
 import { API_BASE } from "../lib/api";
 import { copyToClipboard } from "../lib/clipboard";
-import { fmtUptime, timeAgo } from "../lib/format";
+import { fmtBytes, fmtUptime, timeAgo } from "../lib/format";
 import { OsIcon } from "./ui/OsIcon";
 import { VitalCard } from "./VitalCard";
 import type { ManagedServer, ServerMetricPoint } from "../lib/types/servers";
@@ -53,7 +53,7 @@ export function ServerOverviewTab({
             icon={<Zap size={15} />}
             label="Uptime & I/O"
             value={fmtUptime(latest.uptimeSec)}
-            subtext={`Net: ${(latest.netRx / 1024 / 1024).toFixed(1)}MB Rx · ${(latest.netTx / 1024 / 1024).toFixed(1)}MB Tx`}
+            subtext={`Net: ${fmtBytes(latest.netRx)} Rx · ${fmtBytes(latest.netTx)} Tx`}
           />
         </div>
       ) : (

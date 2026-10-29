@@ -2,10 +2,12 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, ClipboardList, RefreshCw } from "lucide-react";
 import { api } from "../../lib/api";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 const PAGE_SIZES = [25, 50, 100, 200];
 
 export function AuditLogPage() {
+  useDocumentTitle("Audit Log");
   const [pageSize, setPageSize] = useState(100);
   const [page, setPage] = useState(0);
 
@@ -30,7 +32,7 @@ export function AuditLogPage() {
   const to = safePage * pageSize + logs.length;
 
   return (
-    <div className="min-h-screen pt-20 pb-28 px-4 sm:px-6 max-w-5xl mx-auto">
+    <div className="min-h-screen pt-20 pb-36 px-4 sm:px-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <span className="w-9 h-9 rounded-full bg-accent/10 dark:bg-ember/10 flex items-center justify-center text-accent dark:text-ember">
@@ -69,8 +71,8 @@ export function AuditLogPage() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-panel border border-line dark:border-edge rounded-card overflow-hidden shadow-sm">
-        <table className="w-full text-sm border-collapse">
+      <div className="bg-white dark:bg-panel border border-line dark:border-edge rounded-card overflow-x-auto shadow-sm">
+        <table className="w-full min-w-[580px] sm:min-w-0 text-sm border-collapse">
           <thead>
             <tr className="bg-paper dark:bg-emboss border-b border-line dark:border-edge">
               {["Time", "Actor", "Action", "Resource", "Result"].map((h) => (

@@ -5,6 +5,7 @@ import { MonitoringAlertsTab } from "../../components/MonitoringAlertsTab";
 import { MonitoringTargetsTab } from "../../components/MonitoringTargetsTab";
 import { MonitoringSilencesTab } from "../../components/MonitoringSilencesTab";
 import { MonitoringMetricsTab } from "../../components/MonitoringMetricsTab";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 type Tab = "dashboard" | "alerts" | "targets" | "silences" | "metrics";
 const TABS: { id: Tab; label: string }[] = [
@@ -18,6 +19,7 @@ const TABS: { id: Tab; label: string }[] = [
 // Monitoring shell: page header and tab bar; each tab is a self-contained
 // component (own queries and state) in its own file.
 export function MonitoringPage() {
+  useDocumentTitle("Monitoring");
   const [tab, setTab] = useState<Tab>("dashboard");
 
   return (
@@ -37,14 +39,14 @@ export function MonitoringPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-1 mb-6 border-b border-line dark:border-edge">
+      <div className="flex items-center gap-1 mb-6 border-b border-line dark:border-edge overflow-x-auto scrollbar-none pb-1">
         {TABS.map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`px-4 py-2.5 text-[13px] font-medium border-b-2 -mb-px cursor-pointer bg-transparent transition-colors ${
+            className={`px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[13px] font-medium border-b-2 -mb-px cursor-pointer bg-transparent transition-colors whitespace-nowrap shrink-0 ${
               tab === t.id
-                ? "border-accent dark:border-ember text-ink dark:text-bone"
+                ? "border-accent dark:border-ember text-ink dark:text-bone font-semibold"
                 : "border-transparent text-muted dark:text-fog hover:text-ink dark:hover:text-bone"
             }`}
           >

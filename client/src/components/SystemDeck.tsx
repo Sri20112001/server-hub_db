@@ -58,7 +58,7 @@ export function NetworkStatusWidget({ serverOnline }: { serverOnline: boolean })
       {/* Minimal Status Pill */}
       <button
         onClick={() => setOpen(!open)}
-        className="h-9 px-2.5 sm:px-3 rounded-full border border-line dark:border-edge bg-white/90 dark:bg-panel/90 hover:bg-white dark:hover:bg-panel backdrop-blur-md shadow-sm flex items-center gap-2 cursor-pointer transition-colors text-xs font-mono select-none"
+        className="h-9 px-2 sm:px-3 rounded-full border border-line dark:border-edge bg-white/90 dark:bg-panel/90 hover:bg-white dark:hover:bg-panel backdrop-blur-md shadow-sm flex items-center gap-1.5 sm:gap-2 cursor-pointer transition-colors text-xs font-mono select-none"
         title={`Network: ${network.label} — click for details`}
         aria-label="Network status"
         aria-expanded={open}
@@ -78,12 +78,12 @@ export function NetworkStatusWidget({ serverOnline }: { serverOnline: boolean })
         <span className="opacity-90">{renderIcon()}</span>
 
         {/* Dynamic Network Type */}
-        <span className="font-semibold text-ink dark:text-bone uppercase tracking-wide text-[11px]">
+        <span className="font-semibold text-ink dark:text-bone uppercase tracking-wide text-[11px] hidden lg:inline">
           {isHealthy ? network.label : "Offline"}
         </span>
 
         {/* 3-tier Micro Signal Bars */}
-        <div className="flex items-end gap-[1.5px] h-2.5 ml-0.5 opacity-80">
+        <div className="hidden lg:flex items-end gap-[1.5px] h-2.5 ml-0.5 opacity-80">
           {[1, 2, 3].map((bar) => {
             const active = isHealthy && bar <= Math.min(3, network.signalBars);
             const heights = ["h-1", "h-1.5", "h-2.5"];
@@ -101,7 +101,7 @@ export function NetworkStatusWidget({ serverOnline }: { serverOnline: boolean })
 
       {/* Minimal Telemetry Popover */}
       {open && (
-        <div className="absolute right-0 top-11 z-50 w-56 rounded-xl bg-white dark:bg-panel border border-line dark:border-edge shadow-xl p-3 flex flex-col gap-2 font-mono text-xs backdrop-blur-xl animate-in fade-in zoom-in-95">
+        <div className="absolute right-0 top-11 z-50 w-56 max-w-[calc(100vw-2rem)] rounded-xl bg-white dark:bg-panel border border-line dark:border-edge shadow-xl p-3 flex flex-col gap-2 font-mono text-xs backdrop-blur-xl animate-in fade-in zoom-in-95">
           <div className="flex items-center justify-between pb-1.5 border-b border-line dark:border-edge text-[10px] text-muted dark:text-fog uppercase tracking-wider font-semibold">
             <span>Link Telemetry</span>
             <span className={isHealthy ? "text-moss font-bold" : "text-brick font-bold"}>
@@ -212,7 +212,7 @@ export function DeckMenu({
         </span>
 
         {/* Username */}
-        <span className="font-mono text-xs text-ink dark:text-bone hidden sm:inline font-medium">
+        <span className="font-mono text-xs text-ink dark:text-bone hidden lg:inline font-medium">
           {user?.username ?? "Captain"}
         </span>
 
