@@ -9,7 +9,8 @@ ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
 # 2. Build the Go Backend
-FROM golang:1.23-alpine AS backend-build
+FROM golang:1.26-alpine AS backend-build
+ENV GOTOOLCHAIN=auto
 WORKDIR /app
 COPY server/go.mod server/go.sum ./
 RUN go mod download

@@ -1,0 +1,15 @@
+.git
+.github
+client/node_modules
+client/dist
+mobile/node_modules
+mobile/.expo
+mobile/android
+mobile/ios
+agent/serverhub-agent
+agent/serverhub-agent.exe
+server/data
+server/*.db
+server/*.db-*
+server/.env
+*.log
