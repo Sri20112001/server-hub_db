@@ -3,12 +3,12 @@ import { api } from "../../lib/api";
 import { ConfirmModal } from "../../components/ui/ConfirmModal";
 import { Kicker } from "../../components/ui/Kicker";
 import { SettingsSkeleton } from "../../components/ui/SettingsSkeleton";
-import { useSettings, type SettingsController, type SettingsTab } from "./useSettings";
-import { SettingsProfileTab } from "./SettingsProfileTab";
-import { SettingsNotificationsTab } from "./SettingsNotificationsTab";
-import { SettingsSystemTab } from "./SettingsSystemTab";
-import { SettingsUsersTab } from "./SettingsUsersTab";
-import { SettingsDangerTab } from "./SettingsDangerTab";
+import { useSettings, type SettingsController, type SettingsTab } from "../../hooks/useSettings";
+import { SettingsProfileTab } from "../../components/SettingsProfileTab";
+import { SettingsNotificationsTab } from "../../components/SettingsNotificationsTab";
+import { SettingsSystemTab } from "../../components/SettingsSystemTab";
+import { SettingsUsersTab } from "../../components/SettingsUsersTab";
+import { SettingsDangerTab } from "../../components/SettingsDangerTab";
 
 // Settings shell: page header, tab navigation, the active tab body and the
 // three confirmation modals. All state and actions come from useSettings.
