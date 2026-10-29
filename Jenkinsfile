@@ -12,6 +12,15 @@ pipeline {
 
   environment {
     COMPOSE_FILE = 'docker-compose.yml:docker-compose.jenkins.yml'
+    POSTGRES_PASSWORD = credentials('serverhub-postgres-password')
+    JWT_SECRET = credentials('serverhub-jwt-secret')
+    SERVERHUB_ENCRYPTION_KEY = credentials('serverhub-encryption-key')
+    ADMIN_PASSWORD = credentials('serverhub-admin-password')
+    GITHUB_WEBHOOK_SECRET = credentials('serverhub-webhook-secret')
+
+    // Host port for the production PostgreSQL container.
+    // Host port 5432 is already occupied on the host.
+    POSTGRES_PORT = '5434'
   }
 
   stages {
@@ -31,7 +40,16 @@ pipeline {
           docker --version
 
           echo "Checking Docker Compose..."
-          docker compose version
+          if docker compose version >/dev/null 2>&1; then
+            docker compose version
+            printf 'docker compose' > "$WORKSPACE/.jenkins-compose"
+          elif docker-compose version >/dev/null 2>&1; then
+            docker-compose version
+            printf 'docker-compose' > "$WORKSPACE/.jenkins-compose"
+          else
+            echo "ERROR: Neither 'docker compose' nor 'docker-compose' was found."
+            exit 1
+          fi
 
           echo "Preparation completed."
         '''
@@ -101,6 +119,10 @@ pipeline {
 
             echo "Building ServerHub Docker images..."
 
+            POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-build_placeholder}" \
+            JWT_SECRET="${JWT_SECRET:-build_placeholder}" \
+            SERVERHUB_ENCRYPTION_KEY="${SERVERHUB_ENCRYPTION_KEY:-01234567890123456789012345678901}" \
+            ADMIN_PASSWORD="${ADMIN_PASSWORD:-build_placeholder}" \
             $COMPOSE build
           '''
         }
@@ -108,18 +130,6 @@ pipeline {
     }
 
     stage('Deploy') {
-      environment {
-        POSTGRES_PASSWORD = credentials('serverhub-postgres-password')
-        JWT_SECRET = credentials('serverhub-jwt-secret')
-        SERVERHUB_ENCRYPTION_KEY = credentials('serverhub-encryption-key')
-        ADMIN_PASSWORD = credentials('serverhub-admin-password')
-        GITHUB_WEBHOOK_SECRET = credentials('serverhub-webhook-secret')
-
-        // Host port for the production PostgreSQL container.
-        // Host port 5432 is already occupied.
-        POSTGRES_PORT = '5434'
-      }
-
       steps {
         dir('server') {
           sh '''
