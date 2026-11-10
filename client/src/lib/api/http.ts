@@ -25,7 +25,10 @@ export function setStoredToken(token: string | null) {
     } else {
       localStorage.removeItem("serverhub_token");
     }
-  } catch {}
+  } catch {
+    // Storage can be unavailable (private mode, disabled cookies); the
+    // cookie-based session still works, so failing silently is correct.
+  }
 }
 
 // Single-flight session refresh: concurrent 401s share one rotation call.
@@ -50,7 +53,9 @@ function refreshSession(): Promise<boolean> {
         try {
           const data = (await r.json()) as { token?: string };
           if (data?.token) setStoredToken(data.token);
-        } catch {}
+        } catch {
+          // Non-JSON body: the refreshed cookies are already set, so keep going.
+        }
         return true;
       })
       .catch(() => false)
