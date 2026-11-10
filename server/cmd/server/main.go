@@ -360,15 +360,25 @@ func main() {
 		// Map Vite's base path /server-hub/assets to the physical assets folder
 		r.Static("/server-hub/assets", filepath.Join(frontendDir, "assets"))
 		r.StaticFile("/server-hub/favicon.png", filepath.Join(frontendDir, "favicon.png"))
-		
+		r.StaticFile("/server-hub/favicon.svg", filepath.Join(frontendDir, "favicon.svg"))
+		r.StaticFile("/server-hub/icons.svg", filepath.Join(frontendDir, "icons.svg"))
+
 		// All other routes fallback to index.html (SPA)
 		r.NoRoute(func(c *gin.Context) {
-			// Only fallback to index.html if it's under /server-hub or / (to prevent shadowing API)
-			if strings.HasPrefix(c.Request.URL.Path, "/server-hub/") || c.Request.URL.Path == "/server-hub" || c.Request.URL.Path == "/" {
-				c.File(filepath.Join(frontendDir, "index.html"))
-			} else {
+			path := c.Request.URL.Path
+			// API paths must never fall through to the SPA: a typo'd or removed
+			// endpoint has to surface as a real 404, not index.html with a 200
+			// (which hides broken calls and confuses client error handling).
+			if path == "/server-hub/api" || strings.HasPrefix(path, "/server-hub/api/") {
 				c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+				return
 			}
+			// Only fallback to index.html if it's under /server-hub or / (to prevent shadowing API)
+			if strings.HasPrefix(path, "/server-hub/") || path == "/server-hub" || path == "/" {
+				c.File(filepath.Join(frontendDir, "index.html"))
+				return
+			}
+			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 		})
 	} else {
 		// Default NoRoute if frontend isn't bundled

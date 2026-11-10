@@ -210,7 +210,10 @@ pipeline {
 
             echo "Starting ServerHub..."
 
-            $COMPOSE up -d
+            # --build is mandatory: the images are tagged with a fixed name
+            # (`serverhub`), so plain `up -d` happily reuses a stale image and
+            # the previous bundle/API keeps running after a "successful" deploy.
+            $COMPOSE up -d --build
 
             # ---------------------------------------------------------
             # Remove dangling images
