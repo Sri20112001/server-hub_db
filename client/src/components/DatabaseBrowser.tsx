@@ -5,12 +5,21 @@ import { btnAccent, btnGhost, inputCls } from "../utils/databaseTokens";
 import { CredentialsPanel } from "./CredentialsPanel";
 import { DatabaseRowItem } from "./DatabaseRowItem";
 import type { DatabaseController } from "../hooks/useDatabases";
+import { DB_ENGINES, isSupportedEngine } from "../lib/types/databases";
 
 // Right column of the databases page: selected-server header, browse error,
 // credentials form, database listing with bulk selection, and the project
 // registration action bar.
 export function DatabaseBrowser({ d }: { d: DatabaseController }) {
   const selected = d.selected;
+  // Fleet services with no running container arrive with engine "unknown";
+  // they can only be browsed after the user picks the engine explicitly.
+  const engineKnown = Boolean(
+    selected && (isSupportedEngine(selected.engine) || d.engineOverride),
+  );
+  // Badges, icons and row hints should reflect the engine actually in use,
+  // including one the user picked for a server we could not detect.
+  const shownEngine = d.effectiveEngine || selected?.engine || "";
 
   return (
     <div className="bg-white dark:bg-panel border border-line dark:border-edge rounded-card p-5 min-h-[360px] flex flex-col justify-between">
@@ -25,14 +34,14 @@ export function DatabaseBrowser({ d }: { d: DatabaseController }) {
           <div className="flex items-center justify-between gap-3 flex-wrap pb-4 border-b border-line/60 dark:border-edge/60 mb-4">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-paper dark:bg-abyss border border-line dark:border-edge flex items-center justify-center shrink-0">
-                <DatabaseIcon engine={selected.engine} size={24} />
+                <DatabaseIcon engine={shownEngine} size={24} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-head font-bold text-[17px] leading-tight text-ink dark:text-bone">
                     {selected.name}
                   </h3>
-                  <DatabaseBadge engine={selected.engine} size="sm" />
+                  <DatabaseBadge engine={shownEngine} size="sm" />
                 </div>
                 <span className="text-xs font-mono text-muted dark:text-fog">
                   {selected.container || `${selected.host}:${selected.port}`}
@@ -43,7 +52,7 @@ export function DatabaseBrowser({ d }: { d: DatabaseController }) {
             <button
               type="button"
               className={btnGhost}
-              disabled={d.browsing}
+              disabled={d.browsing || !engineKnown}
               onClick={() =>
                 void d.browse(selected, d.username || undefined, d.password || undefined)
               }
@@ -52,6 +61,34 @@ export function DatabaseBrowser({ d }: { d: DatabaseController }) {
               {d.browsing ? "Refreshing…" : "Refresh"}
             </button>
           </div>
+
+          {/* Unknown engine: let the user tell us what this service runs */}
+          {!engineKnown && (
+            <div className="flex items-start gap-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-amber-900 dark:text-amber-200 rounded-input p-3 text-[13px] mb-4">
+              <ShieldAlert size={16} className="shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Engine not detected</p>
+                <p className="opacity-80 mt-0.5">
+                  This service is typed as a database, but its container isn't
+                  running so its engine can't be confirmed. Pick one to browse it.
+                </p>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {DB_ENGINES.map((eng) => (
+                    <button
+                      key={eng}
+                      type="button"
+                      disabled={d.browsing}
+                      onClick={() => d.browseAs(selected, eng)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-mono border border-amber-300/70 dark:border-amber-800 bg-white/70 dark:bg-black/20 hover:bg-white dark:hover:bg-black/40 disabled:opacity-50 transition-colors cursor-pointer"
+                    >
+                      <DatabaseIcon engine={eng} size={12} />
+                      <span className="capitalize">{eng}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Error Banner */}
           {d.browseErr && (
@@ -64,7 +101,7 @@ export function DatabaseBrowser({ d }: { d: DatabaseController }) {
           {/* Auth Credentials Panel */}
           {(d.authRequired || selected.hasCreds || d.username || d.password) && (
             <CredentialsPanel
-              engine={selected.engine}
+              engine={shownEngine}
               username={d.username}
               password={d.password}
               browsing={d.browsing}
@@ -148,7 +185,7 @@ export function DatabaseBrowser({ d }: { d: DatabaseController }) {
                           key={db.name}
                           db={db}
                           isChecked={d.checked.has(db.name)}
-                          engine={selected.engine}
+                          engine={shownEngine}
                           onToggle={() => d.toggle(db.name)}
                         />
                       ))

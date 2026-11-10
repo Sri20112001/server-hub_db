@@ -123,6 +123,54 @@ func dbEngineFromImage(image string) (engine, version string, ok bool) {
 	return "", "", false
 }
 
+// dbEngineFromNames best-effort infers an engine from service/container names
+// when neither an image nor a live container is available (fleet services
+// typed database/cache whose container is not running). Returns "" when the
+// name carries no useful signal.
+func dbEngineFromNames(names ...string) string {
+	hay := strings.ToLower(strings.Join(names, " "))
+	switch {
+	case strings.Contains(hay, "postgres"), strings.Contains(hay, "postgis"),
+		strings.Contains(hay, "timescale"), strings.Contains(hay, "cockroach"):
+		return "postgres"
+	case strings.Contains(hay, "mysql"), strings.Contains(hay, "mariadb"),
+		strings.Contains(hay, "percona"):
+		return "mysql"
+	case strings.Contains(hay, "redis"), strings.Contains(hay, "valkey"),
+		strings.Contains(hay, "keydb"):
+		return "redis"
+	case strings.Contains(hay, "mongo"):
+		return "mongo"
+	}
+	// Short aliases only count as whole tokens ("db-pg", "pg01"), so a name
+	// like "page-builder" is not mistaken for Postgres.
+	for _, tok := range strings.FieldsFunc(hay, func(r rune) bool {
+		return !(r >= 'a' && r <= 'z') && !(r >= '0' && r <= '9')
+	}) {
+		switch {
+		case tok == "pg", tok == "pgsql", tok == "psql", numberedAlias(tok, "pg"):
+			return "postgres"
+		case tok == "mdb":
+			return "mongo"
+		}
+	}
+	return ""
+}
+
+// numberedAlias reports whether tok is prefix followed only by digits
+// (e.g. "pg01"), which is enough to identify a database container name.
+func numberedAlias(tok, prefix string) bool {
+	if !strings.HasPrefix(tok, prefix) || len(tok) == len(prefix) {
+		return false
+	}
+	for _, r := range tok[len(prefix):] {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
+}
+
 // dbServerKey is the stable identity shared by detection, saved connections
 // and registrations.
 func dbServerKey(source, engine, host string, port int, cont string) string {
@@ -252,6 +300,8 @@ func (h *DatabasesHandler) detect() []dbServerInfo {
 			engine := "unknown"
 			if typ == "cache" {
 				engine = "redis"
+			} else if inferred := dbEngineFromNames(name, cont); inferred != "" {
+				engine = inferred
 			}
 			add(dbServerInfo{
 				Key:       dbServerKey("project", engine, "", 0, name),
@@ -346,7 +396,7 @@ func (h *DatabasesHandler) Browse(c *gin.Context) {
 	}
 	t.Engine = strings.ToLower(strings.TrimSpace(t.Engine))
 	if !dbEngines[t.Engine] {
-		c.JSON(400, gin.H{"error": "unknown engine (want postgres, mysql, redis or mongo)"})
+		c.JSON(400, gin.H{"error": "engine not detected (want postgres, mysql, redis or mongo)"})
 		return
 	}
 	if t.Port == 0 {
@@ -395,7 +445,7 @@ func (h *DatabasesHandler) Connect(c *gin.Context) {
 	}
 	t.Engine = strings.ToLower(strings.TrimSpace(t.Engine))
 	if !dbEngines[t.Engine] {
-		c.JSON(400, gin.H{"error": "unknown engine (want postgres, mysql, redis or mongo)"})
+		c.JSON(400, gin.H{"error": "engine not detected (want postgres, mysql, redis or mongo)"})
 		return
 	}
 	if t.Source == "" {
@@ -490,7 +540,7 @@ func (h *DatabasesHandler) Register(c *gin.Context) {
 	t := body.Server
 	t.Engine = strings.ToLower(strings.TrimSpace(t.Engine))
 	if !dbEngines[t.Engine] {
-		c.JSON(400, gin.H{"error": "unknown engine (want postgres, mysql, redis or mongo)"})
+		c.JSON(400, gin.H{"error": "engine not detected (want postgres, mysql, redis or mongo)"})
 		return
 	}
 	if t.Port == 0 {

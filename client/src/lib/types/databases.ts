@@ -29,3 +29,13 @@ export interface DbTarget {
   username?: string;
   password?: string;
 }
+
+// Engines the backend can actually browse. Fleet services detected as
+// databases without a running container come back as "unknown", so the UI
+// must ask the user which engine they run before calling browse.
+export const DB_ENGINES = ["postgres", "mysql", "redis", "mongo"] as const;
+export type DbEngine = (typeof DB_ENGINES)[number];
+
+export function isSupportedEngine(engine?: string | null): engine is DbEngine {
+  return DB_ENGINES.includes(String(engine ?? "").toLowerCase().trim() as DbEngine);
+}

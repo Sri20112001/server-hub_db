@@ -41,8 +41,30 @@ func TestDbEngineFromImage(t *testing.T) {
 	}
 }
 
-func TestDbServerKey(t *testing.T) {
-	a := dbServerKey("docker", "postgres", "", 5432, "pg")
+func TestDbEngineFromNames(t *testing.T) {
+	cases := map[string]string{
+		"my-postgres":     "postgres",
+		"db-pg":           "postgres",
+		"pg01":            "postgres",
+		"mariadb-primary": "mysql",
+		"redis-cache":     "redis",
+		"mongodb":         "mongo",
+		"page-builder":    "",
+		"db":              "",
+		"app-server":      "",
+	}
+	for in, want := range cases {
+		if got := dbEngineFromNames(in); got != want {
+			t.Errorf("dbEngineFromNames(%q) = %q, want %q", in, got, want)
+		}
+	}
+	// Service name and container name are both considered.
+	if got := dbEngineFromNames("data", "acme-redis-1"); got != "redis" {
+		t.Errorf("combined names = %q, want redis", got)
+	}
+}
+
+func TestDbServerKey(t *testing.T) {	a := dbServerKey("docker", "postgres", "", 5432, "pg")
 	b := dbServerKey("docker", "postgres", "", 5432, "pg")
 	c := dbServerKey("host", "postgres", "127.0.0.1", 5432, "")
 	if a == "" || a != b || a == c {

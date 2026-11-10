@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../lib/api";
 import { useUi } from "../stores/store";
 import type { DbItem, DbServerInfo, DbTarget } from "../lib/types/databases";
+import { isSupportedEngine } from "../lib/types/databases";
 import type { Project } from "../lib/types/projects";
 
 function serverTarget(s: DbServerInfo): DbTarget {
@@ -17,6 +18,7 @@ export function useDatabases(setOnline: (v: boolean) => void) {
   const [servers, setServers] = useState<DbServerInfo[] | null>(null);
   const [dockerAvailable, setDockerAvailable] = useState(true);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [engineOverride, setEngineOverride] = useState<string>("");
   const [dbs, setDbs] = useState<DbItem[] | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
 
@@ -60,15 +62,29 @@ export function useDatabases(setOnline: (v: boolean) => void) {
     [servers, selectedKey],
   );
 
+  // Effective engine for the selected server. Detected engines are used as-is;
+  // "unknown" fleet services need an explicit choice before they can be
+  // browsed, connected or registered.
+  const effectiveEngine = selected
+    ? isSupportedEngine(selected.engine)
+      ? selected.engine
+      : engineOverride
+    : "";
+
   const browse = useCallback(
-    async (srv: DbServerInfo, user?: string, pass?: string) => {
+    async (srv: DbServerInfo, user?: string, pass?: string, engine?: string) => {
       const reqId = ++activeReqIdRef.current;
       setBrowsing(true);
       setBrowseErr(null);
       setAuthRequired(false);
 
       try {
-        const t = { ...serverTarget(srv), username: user ?? "", password: pass ?? "" };
+        const t: DbTarget = {
+          ...serverTarget(srv),
+          engine: engine ?? (isSupportedEngine(srv.engine) ? srv.engine : engineOverride),
+          username: user ?? "",
+          password: pass ?? "",
+        };
         const r = await api.browseDatabases(t);
         if (reqId === activeReqIdRef.current) {
           setDbs(r.databases);
@@ -94,17 +110,27 @@ export function useDatabases(setOnline: (v: boolean) => void) {
         }
       }
     },
-    [],
+    [engineOverride],
   );
 
   const pick = (srv: DbServerInfo) => {
     if (srv.key === selectedKey) return;
     setSelectedKey(srv.key);
+    setEngineOverride("");
     setUsername("");
     setPassword("");
     setDbSearch("");
     setDbs(null);
-    void browse(srv);
+    // Unknown engines cannot be browsed until the user says what they run,
+    // so don't fire a request that is guaranteed to 400.
+    if (isSupportedEngine(srv.engine)) void browse(srv);
+  };
+
+  // Retry a server whose engine could not be detected, using the engine the
+  // user picked for it.
+  const browseAs = (srv: DbServerInfo, engine: string) => {
+    setEngineOverride(engine);
+    void browse(srv, undefined, undefined, engine);
   };
 
   const connectAndBrowse = async () => {
@@ -112,7 +138,7 @@ export function useDatabases(setOnline: (v: boolean) => void) {
     setBrowsing(true);
     setBrowseErr(null);
     try {
-      await api.connectDatabase({ ...serverTarget(selected), username, password });
+      await api.connectDatabase({ ...serverTarget(selected), engine: effectiveEngine, username, password });
       pushToast(`Connected to "${selected.name}". Credential saved.`);
       await loadServers();
       await browse(selected, username, password);
@@ -192,7 +218,7 @@ export function useDatabases(setOnline: (v: boolean) => void) {
     try {
       const r = await api.registerDatabases(
         Number(projectId),
-        serverTarget(selected),
+        { ...serverTarget(selected), engine: effectiveEngine },
         [...checked],
         username || undefined,
         password || undefined,
@@ -237,7 +263,10 @@ export function useDatabases(setOnline: (v: boolean) => void) {
     registering,
     loadServers,
     selected,
+    effectiveEngine,
+    engineOverride,
     browse,
+    browseAs,
     pick,
     connectAndBrowse,
     toggle,
