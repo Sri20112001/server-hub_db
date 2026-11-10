@@ -1,7 +1,7 @@
 import { Copy, Info, Key, Terminal } from "lucide-react";
 import { absoluteApiBase } from "../lib/api";
 import { copyToClipboard } from "../lib/clipboard";
-import { AGENT_CLI_PLATFORMS, getRunnerCommand } from "../utils/agentCommands";
+import { AGENT_CLI_PLATFORMS, agentDownloadUrl, getRunnerCommand } from "../utils/agentCommands";
 import { TokenRow } from "./TokenRow";
 import type { AgentToken } from "../lib/types/servers";
 import type { AgentTokenForm } from "../hooks/useServerDetail";
@@ -102,7 +102,7 @@ export function ServerTokensTab({
                 <span className="text-[11px] font-mono font-bold text-amber-900 dark:text-amber-200">
                   Run Command Generator:
                 </span>
-                <div className="flex gap-1">
+                <div className="flex flex-wrap gap-1 justify-end">
                   {AGENT_CLI_PLATFORMS.map((p) => (
                     <button
                       key={p.id}
@@ -159,6 +159,21 @@ export function ServerTokensTab({
         </span>
 
         <div className="space-y-2">
+          <div>
+            <span className="text-muted dark:text-fog text-[10px] uppercase">
+              Download the binary (no Go toolchain, no repo clone):
+            </span>
+            <pre className="bg-paper dark:bg-abyss p-2.5 rounded-lg border border-line dark:border-edge text-ink dark:text-bone mt-0.5 select-all overflow-x-auto">
+              curl -fsSL "{agentDownloadUrl(baseUrl, "linux")}" -o serverhub-agent{"\n"}
+              chmod +x serverhub-agent
+            </pre>
+            <p className="text-[10px] text-muted dark:text-fog mt-1 font-sans">
+              Other targets: <code>{agentDownloadUrl(baseUrl, "linux", "arm64")}</code>,{" "}
+              <code>{agentDownloadUrl(baseUrl, "darwin", "arm64")}</code>,{" "}
+              <code>{agentDownloadUrl(baseUrl, "windows")}</code>
+            </p>
+          </div>
+
           <div>
             <span className="text-muted dark:text-fog text-[10px] uppercase">
               CLI Flag (Universal Windows, macOS, Linux):

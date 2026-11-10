@@ -339,6 +339,13 @@ func main() {
 		agentGrp.POST("/metrics", agentSrvH.IngestMetrics)
 	}
 
+	// Agent binary downloads — public on purpose. It serves the same static
+	// binary that is public in the repo, and a header requirement would break
+	// `curl -fsSL ... -o serverhub-agent` installs on fresh hosts.
+	agentDlH := &handlers.AgentDownloadHandler{Dir: cfg.AgentBinDir}
+	r.GET("/server-hub/api/agent/download", agentDlH.Download)
+	r.HEAD("/server-hub/api/agent/download", agentDlH.Download)
+
 	// Container exec session (single-use token auth, no session cookie).
 	r.GET("/server-hub/api/exec/:token", execH.Attach)
 

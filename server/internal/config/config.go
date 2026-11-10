@@ -28,6 +28,9 @@ type Config struct {
 	// LogRetentionDays is deprecated and ignored: all log tables are
 	// append-only and retained forever (DB triggers reject DELETE/UPDATE).
 	LogRetentionDays int
+	// AgentBinDir is where the cross-compiled agent binaries live; the
+	// download endpoint serves them from here (AGENT_BIN_DIR).
+	AgentBinDir string
 	// Prometheus / Alertmanager integration (optional).
 	PrometheusURL              string
 	PrometheusTimeoutSec       int
@@ -120,6 +123,7 @@ func Load() *Config {
 		AlertDisk:       getenvFloat("ALERT_DISK_PCT", 80),
 		HealthIntervalSec: interval,
 		LogRetentionDays:  retention,
+		AgentBinDir:       getenv("AGENT_BIN_DIR", "/app/agents"),
 		PrometheusURL:             os.Getenv("PROMETHEUS_URL"),
 		PrometheusTimeoutSec:      promTimeout,
 		AlertmanagerURL:           os.Getenv("ALERTMANAGER_URL"),

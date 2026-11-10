@@ -116,6 +116,7 @@ WantedBy=multi-user.target
 | `ALERTMANAGER_URL` | No | Alertmanager base URL (e.g. `http://alertmanager:9093`) |
 | `ALERTMANAGER_TIMEOUT_SEC` | No | Alertmanager request timeout (default: 10) |
 | `ALERTMANAGER_WEBHOOK_SECRET` | No | Shared secret for the Alertmanager webhook endpoint |
+| `AGENT_BIN_DIR` | No | Directory of prebuilt agent binaries served by `/server-hub/api/agent/download` (default: `/app/agents`) |
 
 ### Agent
 

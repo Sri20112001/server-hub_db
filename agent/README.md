@@ -6,6 +6,25 @@ Lightweight Go agent that runs on a managed Linux server and reports heartbeat +
 
 - An agent token generated from the ServerHub web UI (Servers → select server → Agent Tokens → Generate)
 
+## Download a Prebuilt Binary (No Go, No Repo)
+
+The ServerHub API ships with the agent cross-compiled for every supported target, so a fresh host only needs `curl` (Windows: PowerShell):
+
+```bash
+curl -fsSL "http://<your-serverhub-host>:4000/server-hub/api/agent/download?os=linux&arch=amd64" -o serverhub-agent
+chmod +x serverhub-agent
+./serverhub-agent -token="<your-token>" -url="http://<your-serverhub-host>:4000"
+```
+
+`os` is one of `linux`, `darwin`, `windows`; `arch` is one of `amd64` (default), `arm64`, or `arm` (Linux only). Windows binaries carry an `.exe` suffix:
+
+```powershell
+Invoke-WebRequest "http://<your-serverhub-host>:4000/server-hub/api/agent/download?os=windows&arch=amd64" -OutFile serverhub-agent.exe
+.\serverhub-agent.exe -token="<your-token>" -url="http://<your-serverhub-host>:4000"
+```
+
+Requesting an unsupported pair returns `400` with the list of valid targets; a supported pair that the image was built without returns `404`.
+
 ## Quick Install on Linux (1-Step Auto-Service)
 
 Run the included [`install.sh`](./install.sh) script on your Linux server. It automatically copies the binary to `/usr/local/bin`, generates the `systemd` unit, enables auto-start on reboot, and launches the service immediately:
