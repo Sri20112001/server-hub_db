@@ -3,14 +3,14 @@ import { SquareTerminal, X } from "lucide-react";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
-import { API_BASE, api } from "../lib/api";
+import { absoluteApiBase, api } from "../lib/api";
 import type { Service } from "../lib/types/projects";
 import { ConfirmModal } from "./ui/ConfirmModal";
 import { Field } from "./ui/Field";
 import { Kicker } from "./ui/Kicker";
 
 function wsBase(): string {
-  return API_BASE.replace(/^http/, "ws");
+  return absoluteApiBase().replace(/^http/, "ws");
 }
 
 export function TerminalModal({

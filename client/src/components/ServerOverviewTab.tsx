@@ -1,5 +1,5 @@
 import { Clock, Copy, Cpu, Globe, HardDrive, Layers, Server, Shield, Terminal, Zap } from "lucide-react";
-import { API_BASE } from "../lib/api";
+import { absoluteApiBase } from "../lib/api";
 import { copyToClipboard } from "../lib/clipboard";
 import { fmtBytes, fmtUptime, timeAgo } from "../lib/format";
 import { OsIcon } from "./ui/OsIcon";
@@ -313,9 +313,9 @@ export function ServerOverviewTab({
           </div>
 
           <div className="bg-paper dark:bg-abyss border border-line dark:border-edge rounded-lg p-2.5 font-mono text-[11px] text-ink dark:text-bone flex items-center justify-between gap-2">
-            <span className="truncate">./serverhub-agent -url={API_BASE}</span>
+            <span className="truncate">./serverhub-agent -url={absoluteApiBase()}</span>
             <button
-              onClick={() => copyToClipboard(`./serverhub-agent -url=${API_BASE}`, "Command")}
+              onClick={() => copyToClipboard(`./serverhub-agent -url=${absoluteApiBase()}`, "Command")}
               className="p-1 text-muted dark:text-fog hover:text-ink dark:hover:text-bone"
               title="Copy command"
             >

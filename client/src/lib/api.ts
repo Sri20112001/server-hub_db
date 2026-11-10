@@ -15,7 +15,7 @@ import { alertsApi } from "./api/alerts";
 import { healthApi } from "./api/health";
 import { monitoringApi } from "./api/monitoring";
 
-export { API_BASE, ApiError } from "./api/http";
+export { API_BASE, absoluteApiBase, ApiError } from "./api/http";
 
 // Public API facade: one `api` object assembled from the per-domain method
 // groups in lib/api/. Importers keep a single entry point; the domain

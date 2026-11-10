@@ -1,5 +1,5 @@
 import { Copy, Info, Key, Terminal } from "lucide-react";
-import { API_BASE } from "../lib/api";
+import { absoluteApiBase } from "../lib/api";
 import { copyToClipboard } from "../lib/clipboard";
 import { AGENT_CLI_PLATFORMS, getRunnerCommand } from "../utils/agentCommands";
 import { TokenRow } from "./TokenRow";
@@ -19,6 +19,8 @@ export function ServerTokensTab({
   refetchTokens: () => void;
   form: AgentTokenForm;
 }) {
+  // Shell commands need a real host: API_BASE is empty in same-origin builds.
+  const baseUrl = absoluteApiBase();
   return (
     <div className="space-y-4">
       {/* Header Card */}
@@ -119,11 +121,11 @@ export function ServerTokensTab({
 
               <div className="relative">
                 <pre className="p-2.5 rounded-lg bg-white dark:bg-panel border border-amber-500/30 font-mono text-[11px] text-ink dark:text-bone overflow-x-auto select-all">
-                  {getRunnerCommand(form.platform, form.newToken, API_BASE)}
+                  {getRunnerCommand(form.platform, form.newToken, baseUrl)}
                 </pre>
                 <button
                   onClick={() =>
-                    copyToClipboard(getRunnerCommand(form.platform, form.newToken!, API_BASE), "Run Command")
+                    copyToClipboard(getRunnerCommand(form.platform, form.newToken!, baseUrl), "Run Command")
                   }
                   className="absolute right-2 top-2 p-1 rounded bg-paper dark:bg-abyss text-muted dark:text-fog hover:text-ink dark:hover:text-bone"
                   title="Copy run command"
@@ -162,7 +164,7 @@ export function ServerTokensTab({
               CLI Flag (Universal Windows, macOS, Linux):
             </span>
             <pre className="bg-paper dark:bg-abyss p-2.5 rounded-lg border border-line dark:border-edge text-ink dark:text-bone mt-0.5 select-all overflow-x-auto">
-              ./serverhub-agent -token="&lt;token&gt;" -url="{API_BASE}"
+              ./serverhub-agent -token="&lt;token&gt;" -url="{baseUrl}"
             </pre>
           </div>
 
@@ -171,7 +173,7 @@ export function ServerTokensTab({
               Windows PowerShell:
             </span>
             <pre className="bg-paper dark:bg-abyss p-2.5 rounded-lg border border-line dark:border-edge text-ink dark:text-bone mt-0.5 select-all overflow-x-auto">
-              $env:AGENT_TOKEN="&lt;token&gt;"; $env:SERVERHUB_URL="{API_BASE}"; .\serverhub-agent.exe
+              $env:AGENT_TOKEN="&lt;token&gt;"; $env:SERVERHUB_URL="{baseUrl}"; .\serverhub-agent.exe
             </pre>
           </div>
 
@@ -180,7 +182,7 @@ export function ServerTokensTab({
               Windows Command Prompt (CMD):
             </span>
             <pre className="bg-paper dark:bg-abyss p-2.5 rounded-lg border border-line dark:border-edge text-ink dark:text-bone mt-0.5 select-all overflow-x-auto">
-              set AGENT_TOKEN=&lt;token&gt;&amp;&amp; set SERVERHUB_URL={API_BASE}&amp;&amp; serverhub-agent.exe
+              set AGENT_TOKEN=&lt;token&gt;&amp;&amp; set SERVERHUB_URL={baseUrl}&amp;&amp; serverhub-agent.exe
             </pre>
           </div>
 
@@ -189,7 +191,7 @@ export function ServerTokensTab({
               Linux / macOS / Bash:
             </span>
             <pre className="bg-paper dark:bg-abyss p-2.5 rounded-lg border border-line dark:border-edge text-ink dark:text-bone mt-0.5 select-all overflow-x-auto">
-              AGENT_TOKEN="&lt;token&gt;" SERVERHUB_URL="{API_BASE}" ./serverhub-agent
+              AGENT_TOKEN="&lt;token&gt;" SERVERHUB_URL="{baseUrl}" ./serverhub-agent
             </pre>
           </div>
         </div>

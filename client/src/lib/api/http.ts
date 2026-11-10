@@ -2,6 +2,18 @@ export const API_BASE =
   (import.meta.env.VITE_API_URL as string | undefined) ||
   (import.meta.env.DEV ? "http://localhost:4000" : "");
 
+// Absolute base URL for things a browser does not resolve relative to the
+// page: shell commands shown to the user (agent install) and WebSocket URLs.
+// In production API_BASE is "" because the API is same-origin, so fall back to
+// the page origin instead of rendering an empty host.
+export function absoluteApiBase(): string {
+  if (API_BASE) return API_BASE;
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return window.location.origin;
+  }
+  return "";
+}
+
 export class ApiError extends Error {
   status: number;
   constructor(status: number, message: string) {
