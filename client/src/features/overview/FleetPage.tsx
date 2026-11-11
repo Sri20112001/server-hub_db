@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { ArrowLeft, Play, Power, RotateCcw, Trash2, X } from "lucide-react";
+import { Play, Power, RotateCcw, Trash2, X } from "lucide-react";
 import { api, ApiError } from "../../lib/api";
 import type { DashboardData } from "../../lib/types/dashboard";
 import type { Deployment, Project, Service } from "../../lib/types/projects";
@@ -10,6 +10,8 @@ import { ConfirmModal } from "../../components/ui/ConfirmModal";
 import { DashboardSkeleton } from "../../components/ui/DashboardSkeleton";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Kicker } from "../../components/ui/Kicker";
+import { Page } from "../../components/ui/Page";
+import { PageHeader } from "../../components/ui/PageHeader";
 import { RegistryToolbar, type RegistryView } from "../../components/ui/RegistryToolbar";
 import { ProjectDrawer } from "../../components/ProjectDrawer";
 import { ShipCard } from "../../components/ShipCard";
@@ -211,28 +213,17 @@ export function FleetPage({ setOnline }: { setOnline: (v: boolean) => void }) {
   const allPicked = filtered.length > 0 && filtered.every((p) => picked.has(p.id));
 
   return (
-    <main className="w-full max-w-7xl mx-auto px-10 max-md:px-4 pt-24 pb-36">
-      <div className="flex items-end justify-between gap-4 flex-wrap mb-5">
-        <div className="min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <button
-              className="inline-flex items-center gap-1.5 bg-transparent border-0 cursor-pointer text-muted dark:text-fog hover:text-ink dark:hover:text-bone text-[13px] px-0 transition-colors"
-              onClick={() => nav("/")}
-            >
-              <ArrowLeft size={14} /> Dashboard
-            </button>
-            <span className="text-line dark:text-edge">/</span>
-            <h1 className="font-head text-[32px] font-bold tracking-[-0.03em] leading-[1.2] max-md:text-[26px]">
-              Fleet registry
-            </h1>
-          </div>
-          <p className="text-muted dark:text-fog mt-1.5">
-            <Kicker>
-              {filtered.length} of {data.projects.length} ships
-            </Kicker>
-          </p>
-        </div>
-      </div>
+    <Page width="wide">
+      <PageHeader
+        className="mb-5"
+        back={{ label: "Dashboard", onClick: () => nav("/") }}
+        title="Fleet registry"
+        subtitle={
+          <Kicker>
+            {filtered.length} of {data.projects.length} ships
+          </Kicker>
+        }
+      />
 
       <RegistryToolbar
         search={q}
@@ -333,7 +324,7 @@ export function FleetPage({ setOnline }: { setOnline: (v: boolean) => void }) {
                 onOpen={(p) => setParams({ project: String(p.id) })}
               />
             ) : (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid-cards">
                 {filtered.map((p) => (
                   <ShipCard
                     key={p.id}
@@ -379,6 +370,6 @@ export function FleetPage({ setOnline }: { setOnline: (v: boolean) => void }) {
           onConfirm={() => void runBulkDelete()}
         />
       )}
-    </main>
+    </Page>
   );
 }

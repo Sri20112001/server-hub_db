@@ -6,6 +6,8 @@ import { ServerGroupFilter } from "../../components/ServerGroupFilter";
 import { ServerStatsRow } from "../../components/ServerStatsRow";
 import { AddServerModal } from "../../components/AddServerModal";
 import { RegistryToolbar } from "../../components/ui/RegistryToolbar";
+import { Page } from "../../components/ui/Page";
+import { PageHeader } from "../../components/ui/PageHeader";
 import { useServers } from "../../hooks/useServers";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
@@ -33,34 +35,30 @@ export function ServersPage({ setOnline }: { setOnline: (v: boolean) => void }) 
   const d = useServers(setOnline);
 
   return (
-    <div className="min-h-screen pt-20 pb-36 px-4 sm:px-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-full bg-accent/10 dark:bg-ember/10 flex items-center justify-center text-accent dark:text-ember">
-            <Server size={20} />
-          </span>
-          <div>
-            <h1 className="text-ink dark:text-bone font-bold text-xl">Servers</h1>
-            <p className="text-xs text-muted dark:text-fog">Managed host nodes and remote telemetry agents</p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => void d.refetch()}
-            className="w-9 h-9 rounded-full bg-white dark:bg-panel border border-line dark:border-edge flex items-center justify-center text-muted dark:text-fog hover:text-ink dark:hover:text-bone cursor-pointer"
-            aria-label="Refresh"
-          >
-            <RefreshCw size={15} />
-          </button>
-          <button
-            onClick={() => d.setShowAdd(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-accent dark:bg-ember text-white dark:text-black text-sm font-semibold rounded-lg hover:bg-accent-hover dark:hover:bg-ember-hover transition-colors cursor-pointer"
-          >
-            <Plus size={15} /> Add Server
-          </button>
-        </div>
-      </div>
+    <Page width="default">
+      <PageHeader
+        size="sm"
+        icon={<Server size={20} />}
+        title="Servers"
+        subtitle="Managed host nodes and remote telemetry agents"
+        actions={
+          <>
+            <button
+              onClick={() => void d.refetch()}
+              className="w-9 h-9 rounded-full bg-white dark:bg-panel border border-line dark:border-edge flex items-center justify-center text-muted dark:text-fog hover:text-ink dark:hover:text-bone cursor-pointer"
+              aria-label="Refresh"
+            >
+              <RefreshCw size={15} />
+            </button>
+            <button
+              onClick={() => d.setShowAdd(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-accent dark:bg-ember text-white dark:text-black text-sm font-semibold rounded-lg hover:bg-accent-hover dark:hover:bg-ember-hover transition-colors cursor-pointer"
+            >
+              <Plus size={15} /> Add Server
+            </button>
+          </>
+        }
+      />
 
       {/* Summary */}
       <ServerStatsRow
@@ -90,7 +88,7 @@ export function ServersPage({ setOnline }: { setOnline: (v: boolean) => void }) 
 
       {/* Server registry */}
       {d.isLoading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid-cards">
           {[1, 2, 3].map((i) => (
             <div key={i} className="bg-white dark:bg-panel border border-line dark:border-edge rounded-card p-4 h-40 animate-pulse" />
           ))}
@@ -125,7 +123,7 @@ export function ServersPage({ setOnline }: { setOnline: (v: boolean) => void }) 
             onDelete={(s) => d.deleteServer(s)}
           />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid-cards">
             {d.filtered.map((s) => (
               <ServerCard
                 key={s.id}
@@ -144,6 +142,6 @@ export function ServersPage({ setOnline }: { setOnline: (v: boolean) => void }) 
           onCreated={d.invalidate}
         />
       )}
-    </div>
+    </Page>
   );
 }

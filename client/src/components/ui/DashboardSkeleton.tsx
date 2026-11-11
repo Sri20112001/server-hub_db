@@ -1,4 +1,5 @@
 import { Skel } from "./Skel";
+import { Page } from "./Page";
 
 function SyncPill({ text }: { text: string }) {
   return (
@@ -100,11 +101,7 @@ function ShipSkel() {
 
 export function DashboardSkeleton() {
   return (
-    <main
-      className="w-full max-w-[1240px] mx-auto px-10 max-md:px-4 pt-24 pb-36"
-      aria-busy="true"
-      role="status"
-    >
+    <Page width="wide" aria-busy="true" role="status">
       <span className="sr-only">Loading ServerHub telemetry</span>
       <SyncPill text="Syncing telemetry" />
 
@@ -120,9 +117,8 @@ export function DashboardSkeleton() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4 mt-5">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 mt-5">
         <StatSkelMeters />
-        <StatSkelNumber />
         <StatSkelNumber />
         <StatSkelHealth />
       </div>
@@ -134,37 +130,10 @@ export function DashboardSkeleton() {
         </div>
         <Skel className="w-24 h-9 rounded-lg" />
       </div>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid-cards">
         {[0, 1, 2, 3, 4, 5].map((i) => (
           <ShipSkel key={i} />
         ))}
-      </div>
-
-      <div className="mt-8 mb-4">
-        <Skel className="w-40 h-3 rounded" />
-        <Skel className="w-56 h-6 rounded mt-2" />
-      </div>
-      <div className="bg-white dark:bg-panel border border-line dark:border-edge rounded-card p-0 overflow-hidden">
-        <div className="flex items-center justify-between gap-4 px-4 py-2.5 bg-paper dark:bg-abyss">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <Skel key={i} className="h-3 rounded w-16 max-md:hidden first:max-md:block" />
-          ))}
-        </div>
-        {[0, 1, 2, 3, 4].map((i) => (
-          <div
-            key={i}
-            className="flex items-center justify-between gap-4 px-4 py-3 border-t border-line dark:border-edge"
-          >
-            <Skel className="w-40 max-w-[40%] h-5 rounded-full" />
-            <Skel className="w-24 h-4 rounded max-md:hidden" />
-            <Skel className="w-16 h-4 rounded max-md:hidden" />
-            <Skel className="w-20 h-5 rounded-full" />
-          </div>
-        ))}
-        <div className="flex items-center justify-between gap-4 px-4 py-[0.7rem] border-t border-line dark:border-edge">
-          <Skel className="w-48 h-3 rounded" />
-          <Skel className="w-24 h-8 rounded-lg" />
-        </div>
       </div>
 
       <div className="mt-8">
@@ -181,6 +150,6 @@ export function DashboardSkeleton() {
           <Skel className="h-3 rounded w-3/5 mt-2" />
         </div>
       </div>
-    </main>
+    </Page>
   );
 }

@@ -1,22 +1,18 @@
 import { useEffect, useRef, useState } from "react";
+import { useReducedMotion } from "./useReducedMotion";
 
 // Animated counter used by dashboard tiles, cards and chart readouts: eases
 // the displayed value toward a new target whenever the target changes.
-// Honors prefers-reduced-motion by snapping straight to the value.
-
-const REDUCED_MOTION =
-  typeof window !== "undefined" &&
-  typeof window.matchMedia === "function" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
+// Honours the shared reduced-motion policy by snapping straight to the value.
 export function useCountUp(target: number, duration = 650): number {
+  const reduced = useReducedMotion();
   const goal = Number.isFinite(target) ? target : 0;
-  const [display, setDisplay] = useState(REDUCED_MOTION ? goal : 0);
-  const current = useRef(REDUCED_MOTION ? goal : 0);
+  const [display, setDisplay] = useState(0);
+  const current = useRef(0);
   const frame = useRef(0);
 
   useEffect(() => {
-    if (REDUCED_MOTION) return;
+    if (reduced) return;
     const from = current.current;
     if (from === goal) return;
     const start = performance.now();
@@ -31,7 +27,7 @@ export function useCountUp(target: number, duration = 650): number {
     };
     frame.current = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame.current);
-  }, [goal, duration]);
+  }, [goal, duration, reduced]);
 
-  return REDUCED_MOTION ? goal : display;
+  return reduced ? goal : display;
 }

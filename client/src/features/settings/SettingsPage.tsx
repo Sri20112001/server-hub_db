@@ -2,8 +2,9 @@ import { BellRing, Server, TriangleAlert, User, Users } from "lucide-react";
 // DEPLOY: api only used by the paused history wipe.
 // import { api } from "../../lib/api";
 import { ConfirmModal } from "../../components/ui/ConfirmModal";
-import { Kicker } from "../../components/ui/Kicker";
 import { SettingsSkeleton } from "../../components/ui/SettingsSkeleton";
+import { Page } from "../../components/ui/Page";
+import { PageHeader } from "../../components/ui/PageHeader";
 import { useSettings, type SettingsController, type SettingsTab } from "../../hooks/useSettings";
 import { SettingsProfileTab } from "../../components/SettingsProfileTab";
 import { SettingsNotificationsTab } from "../../components/SettingsNotificationsTab";
@@ -31,16 +32,12 @@ export function SettingsPage({ setOnline }: { setOnline: (v: boolean) => void })
   ];
 
   return (
-    <main className="w-full max-w-[860px] mx-auto px-6 max-md:px-4 pt-24 pb-36">
-      <div className="mb-6">
-        <Kicker>Server preferences & access</Kicker>
-        <h1 className="font-head text-[32px] font-bold tracking-[-0.03em] leading-[1.2] max-md:text-[26px] mt-1.5 text-ink dark:text-bone">
-          Settings
-        </h1>
-        <p className="text-muted dark:text-fog mt-1.5 text-sm">
-          Configure host environment, notification channels, security policies, and administrative operations.
-        </p>
-      </div>
+    <Page width="narrow">
+      <PageHeader
+        kicker="Server preferences & access"
+        title="Settings"
+        subtitle="Configure host environment, notification channels, security policies, and administrative operations."
+      />
 
       {/* Tabs navigation */}
       <div className="flex gap-1.5 mb-6 overflow-x-auto p-1.5 bg-paper dark:bg-panel border border-line dark:border-edge rounded-card">
@@ -110,6 +107,6 @@ export function SettingsPage({ setOnline }: { setOnline: (v: boolean) => void })
           onConfirm={c.handleLogoutAll}
         />
       )}
-    </main>
+    </Page>
   );
 }

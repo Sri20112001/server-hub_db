@@ -1,12 +1,9 @@
 import { Skel } from "./Skel";
+import { Page } from "./Page";
 
 export function SettingsSkeleton() {
   return (
-    <main
-      className="w-full max-w-[760px] mx-auto px-6 max-md:px-4 pt-24 pb-36"
-      aria-busy="true"
-      role="status"
-    >
+    <Page width="narrow" aria-busy="true" role="status">
       <span className="sr-only">Loading settings</span>
       <div className="flex justify-end">
         <div className="inline-flex items-center gap-2 bg-white dark:bg-panel border border-line dark:border-edge rounded-full px-3 py-1 mb-3">
@@ -113,6 +110,6 @@ export function SettingsSkeleton() {
           <Skel className="w-24 h-3 rounded" />
         </div>
       </div>
-    </main>
+    </Page>
   );
 }

@@ -4,6 +4,8 @@ import { Activity, Plus, RefreshCw, Trash2, ChevronDown, ChevronUp } from "lucid
 import { api } from "../../lib/api";
 import type { HealthCheck } from "../../lib/types/health";
 import { useUi } from "../../stores/store";
+import { Page } from "../../components/ui/Page";
+import { PageHeader } from "../../components/ui/PageHeader";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 const STATUS_COLOR: Record<string, string> = {
@@ -205,33 +207,34 @@ export function HealthChecksPage() {
   useDocumentTitle(down > 0 ? `(${down} down) Health Checks` : "Health Checks");
 
   return (
-    <div className="min-h-screen pt-20 pb-36 px-4 sm:px-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-full bg-accent/10 dark:bg-ember/10 flex items-center justify-center text-accent dark:text-ember">
-            <Activity size={20} />
-          </span>
-          <div>
-            <h1 className="text-ink dark:text-bone font-bold text-xl">Health Checks</h1>
-            <p className="text-xs text-muted dark:text-fog">Continuous uptime probes for services and endpoints</p>
-          </div>
-          <span className="text-green-600 dark:text-green-400 text-xs font-mono font-semibold ml-1">{up} up</span>
-          {down > 0 && <span className="text-red-600 dark:text-red-400 text-xs font-mono font-semibold">{down} down</span>}
-        </div>
-        <div className="flex gap-2">
-          <button onClick={() => void refetch()}
-            className="w-9 h-9 rounded-full bg-white dark:bg-panel border border-line dark:border-edge flex items-center justify-center text-muted dark:text-fog hover:text-ink dark:hover:text-bone transition-colors"
-            title="Refresh"
-            aria-label="Refresh"
-          >
-            <RefreshCw size={15} />
-          </button>
-          <button onClick={() => setShowAdd(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-accent dark:bg-ember text-white dark:text-black text-sm font-semibold rounded-lg hover:bg-accent-hover dark:hover:bg-ember-hover transition-colors">
-            <Plus size={15} /> Add Check
-          </button>
-        </div>
-      </div>
+    <Page width="default">
+      <PageHeader
+        size="sm"
+        icon={<Activity size={20} />}
+        title="Health Checks"
+        subtitle="Continuous uptime probes for services and endpoints"
+        badge={
+          <>
+            <span className="text-green-600 dark:text-green-400 text-xs font-mono font-semibold">{up} up</span>
+            {down > 0 && <span className="text-red-600 dark:text-red-400 text-xs font-mono font-semibold">{down} down</span>}
+          </>
+        }
+        actions={
+          <>
+            <button onClick={() => void refetch()}
+              className="w-9 h-9 rounded-full bg-white dark:bg-panel border border-line dark:border-edge flex items-center justify-center text-muted dark:text-fog hover:text-ink dark:hover:text-bone transition-colors"
+              title="Refresh"
+              aria-label="Refresh"
+            >
+              <RefreshCw size={15} />
+            </button>
+            <button onClick={() => setShowAdd(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-accent dark:bg-ember text-white dark:text-black text-sm font-semibold rounded-lg hover:bg-accent-hover dark:hover:bg-ember-hover transition-colors">
+              <Plus size={15} /> Add Check
+            </button>
+          </>
+        }
+      />
 
       {isLoading && (
         <div className="space-y-3">
@@ -261,6 +264,6 @@ export function HealthChecksPage() {
           onCreated={() => void qc.invalidateQueries({ queryKey: ["health-checks"] })}
         />
       )}
-    </div>
+    </Page>
   );
 }

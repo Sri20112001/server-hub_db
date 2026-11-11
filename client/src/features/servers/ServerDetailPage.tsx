@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router";
 import { Activity, ClipboardList, Key, Server } from "lucide-react";
 import { ConfirmModal } from "../../components/ui/ConfirmModal";
+import { Page } from "../../components/ui/Page";
 import { ServerAlertsBanner } from "../../components/ServerAlertsBanner";
 import { ServerAuditTab } from "../../components/ServerAuditTab";
 import { ServerHeader } from "../../components/ServerHeader";
@@ -25,7 +26,7 @@ export function ServerDetailPage({ setOnline }: { setOnline: (v: boolean) => voi
 
   if (d.isLoading) {
     return (
-      <div className="min-h-screen pt-20 pb-28 px-4 sm:px-6 max-w-5xl mx-auto space-y-4 animate-pulse">
+      <Page width="default" className="space-y-4 animate-pulse">
         <div className="h-6 w-32 bg-paper dark:bg-panel rounded-md" />
         <div className="h-28 bg-white dark:bg-panel rounded-card border border-line dark:border-edge" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -33,14 +34,14 @@ export function ServerDetailPage({ setOnline }: { setOnline: (v: boolean) => voi
             <div key={i} className="h-24 bg-white dark:bg-panel rounded-card border border-line dark:border-edge" />
           ))}
         </div>
-      </div>
+      </Page>
     );
   }
 
   if (!server) {
     return (
-      <div className="min-h-screen pt-24 pb-28 px-4 max-w-xl mx-auto text-center">
-        <div className="bg-white dark:bg-panel border border-line dark:border-edge rounded-card p-8">
+      <Page width="narrow" className="text-center">
+        <div className="bg-white dark:bg-panel border border-line dark:border-edge rounded-card p-8 max-w-xl mx-auto">
           <Server size={36} className="mx-auto text-muted dark:text-fog mb-3 opacity-40" />
           <h2 className="text-lg font-bold text-ink dark:text-bone mb-1">Server not found</h2>
           <p className="text-sm text-muted dark:text-fog mb-4">
@@ -53,7 +54,7 @@ export function ServerDetailPage({ setOnline }: { setOnline: (v: boolean) => voi
             Back to Servers
           </button>
         </div>
-      </div>
+      </Page>
     );
   }
 
@@ -68,7 +69,7 @@ export function ServerDetailPage({ setOnline }: { setOnline: (v: boolean) => voi
   ];
 
   return (
-    <div className="min-h-screen pt-20 pb-36 px-4 sm:px-6 max-w-5xl mx-auto">
+    <Page width="default">
       <ServerHeader
         server={server}
         isOnline={isOnline}
@@ -142,6 +143,6 @@ export function ServerDetailPage({ setOnline }: { setOnline: (v: boolean) => voi
           onConfirm={() => void d.handleDelete()}
         />
       )}
-    </div>
+    </Page>
   );
 }

@@ -3,6 +3,8 @@ import { AlertRuleFilters } from "../../components/AlertRuleFilters";
 import { AlertRulesEmpty } from "../../components/AlertRulesEmpty";
 import { AlertRuleStats } from "../../components/AlertRuleStats";
 import { AlertRuleTemplates } from "../../components/AlertRuleTemplates";
+import { Page } from "../../components/ui/Page";
+import { PageHeader } from "../../components/ui/PageHeader";
 import { RuleCard } from "../../components/RuleCard";
 import { RuleModal } from "../../components/RuleModal";
 import { useAlertRules } from "../../hooks/useAlertRules";
@@ -17,55 +19,46 @@ export function AlertRulesPage() {
   const a = useAlertRules();
 
   return (
-    <div className="min-h-screen pt-20 pb-36 px-4 sm:px-6 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-accent/10 dark:bg-ember/15 flex items-center justify-center text-accent dark:text-ember shadow-xs">
-            <BellRing size={22} />
-          </div>
-          <div>
-            <h1 className="text-ink dark:text-bone font-bold text-2xl tracking-tight">
-              Alert Rules
-            </h1>
-            <p className="text-xs text-muted dark:text-fog mt-0.5">
-              Custom per-server and global threshold rules with sustained evaluation windows
-            </p>
-          </div>
-        </div>
+    <Page width="default">
+      <PageHeader
+        size="sm"
+        icon={<BellRing size={20} />}
+        title="Alert Rules"
+        subtitle="Custom per-server and global threshold rules with sustained evaluation windows"
+        actions={
+          <>
+            <button
+              onClick={() => void a.refetch()}
+              className="w-9 h-9 rounded-input bg-white dark:bg-panel border border-line dark:border-edge flex items-center justify-center text-muted dark:text-fog hover:text-ink dark:hover:text-bone transition-colors cursor-pointer"
+              title="Refresh"
+              aria-label="Refresh"
+            >
+              <RefreshCw size={14} className={a.isFetching ? "animate-spin" : ""} />
+            </button>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={() => void a.refetch()}
-            className="w-9 h-9 rounded-input bg-white dark:bg-panel border border-line dark:border-edge flex items-center justify-center text-muted dark:text-fog hover:text-ink dark:hover:text-bone transition-colors cursor-pointer"
-            title="Refresh"
-            aria-label="Refresh"
-          >
-            <RefreshCw size={14} className={a.isFetching ? "animate-spin" : ""} />
-          </button>
+            {a.canWrite && (
+              <>
+                <button
+                  onClick={() => a.setShowTemplates(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-input text-xs font-semibold bg-white dark:bg-panel border border-line dark:border-edge text-ink dark:text-bone hover:border-accent dark:hover:border-ember transition-colors cursor-pointer"
+                  title="Browse curated starter rules"
+                >
+                  <Sparkles size={14} className="text-accent dark:text-ember" />
+                  <span>Templates</span>
+                </button>
 
-          {a.canWrite && (
-            <>
-              <button
-                onClick={() => a.setShowTemplates(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-input text-xs font-semibold bg-white dark:bg-panel border border-line dark:border-edge text-ink dark:text-bone hover:border-accent dark:hover:border-ember transition-colors cursor-pointer"
-                title="Browse curated starter rules"
-              >
-                <Sparkles size={14} className="text-accent dark:text-ember" />
-                <span>Templates</span>
-              </button>
-
-              <button
-                onClick={() => a.setShowAdd(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-input text-xs font-semibold bg-accent dark:bg-ember text-white dark:text-black hover:bg-accent-hover dark:hover:bg-ember-hover transition-colors cursor-pointer shadow-xs"
-              >
-                <Plus size={15} />
-                <span>Add Rule</span>
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+                <button
+                  onClick={() => a.setShowAdd(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-input text-xs font-semibold bg-accent dark:bg-ember text-white dark:text-black hover:bg-accent-hover dark:hover:bg-ember-hover transition-colors cursor-pointer shadow-xs"
+                >
+                  <Plus size={15} />
+                  <span>Add Rule</span>
+                </button>
+              </>
+            )}
+          </>
+        }
+      />
 
       {/* Stats Deck */}
       <AlertRuleStats
@@ -155,6 +148,6 @@ export function AlertRulesPage() {
           onSaved={a.invalidate}
         />
       )}
-    </div>
+    </Page>
   );
 }

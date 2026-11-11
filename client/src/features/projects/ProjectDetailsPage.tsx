@@ -6,6 +6,7 @@ import type { Project } from "../../lib/types/projects";
 import { useUi } from "../../stores/store";
 import { DashboardSkeleton } from "../../components/ui/DashboardSkeleton";
 import { EmptyState } from "../../components/ui/EmptyState";
+import { Page } from "../../components/ui/Page";
 import { ProjectDetailsBody } from "../../components/ProjectDetailsBody";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
@@ -45,7 +46,7 @@ export function ProjectDetailsPage({ setOnline }: { setOnline: (v: boolean) => v
 
   if (missing) {
     return (
-      <main className="w-full max-w-7xl mx-auto px-10 max-md:px-4 pt-24 pb-36">
+      <Page width="default">
         <EmptyState title="Ship not found" hint="It may have been deleted." />
         <div className="flex justify-center mt-4">
           <button
@@ -55,7 +56,7 @@ export function ProjectDetailsPage({ setOnline }: { setOnline: (v: boolean) => v
             <ArrowLeft size={14} /> Dashboard
           </button>
         </div>
-      </main>
+      </Page>
     );
   }
 

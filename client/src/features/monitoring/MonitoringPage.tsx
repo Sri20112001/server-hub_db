@@ -5,6 +5,8 @@ import { MonitoringAlertsTab } from "../../components/MonitoringAlertsTab";
 import { MonitoringTargetsTab } from "../../components/MonitoringTargetsTab";
 import { MonitoringSilencesTab } from "../../components/MonitoringSilencesTab";
 import { MonitoringMetricsTab } from "../../components/MonitoringMetricsTab";
+import { Page } from "../../components/ui/Page";
+import { PageHeader } from "../../components/ui/PageHeader";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 type Tab = "dashboard" | "alerts" | "targets" | "silences" | "metrics";
@@ -23,21 +25,18 @@ export function MonitoringPage() {
   const [tab, setTab] = useState<Tab>("dashboard");
 
   return (
-    <main className="w-full max-w-7xl mx-auto px-10 max-md:px-4 pt-24 pb-36">
-      <div className="flex items-end justify-between gap-4 flex-wrap mb-8">
-        <div>
-          <h1 className="font-head text-[32px] font-bold tracking-[-0.03em] leading-[1.2] max-md:text-[26px]">
-            Monitoring.
-          </h1>
-          <p className="text-muted dark:text-fog mt-1.5">
-            Prometheus metrics · Alertmanager alerts
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Server size={14} className="text-muted dark:text-fog" />
-          <Activity size={14} className="text-muted dark:text-fog" />
-        </div>
-      </div>
+    <Page width="wide">
+      <PageHeader
+        className="mb-8"
+        title="Monitoring."
+        subtitle="Prometheus metrics · Alertmanager alerts"
+        actions={
+          <>
+            <Server size={14} className="text-muted dark:text-fog" />
+            <Activity size={14} className="text-muted dark:text-fog" />
+          </>
+        }
+      />
 
       <div className="flex items-center gap-1 mb-6 border-b border-line dark:border-edge overflow-x-auto scrollbar-none pb-1">
         {TABS.map(t => (
@@ -60,6 +59,6 @@ export function MonitoringPage() {
       {tab === "targets" && <MonitoringTargetsTab />}
       {tab === "silences" && <MonitoringSilencesTab />}
       {tab === "metrics" && <MonitoringMetricsTab />}
-    </main>
+    </Page>
   );
 }

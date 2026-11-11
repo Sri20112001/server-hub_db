@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, ClipboardList, RefreshCw } from "lucide-react";
 import { api } from "../../lib/api";
+import { Page } from "../../components/ui/Page";
+import { PageHeader } from "../../components/ui/PageHeader";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 const PAGE_SIZES = [25, 50, 100, 200];
@@ -32,44 +34,43 @@ export function AuditLogPage() {
   const to = safePage * pageSize + logs.length;
 
   return (
-    <div className="min-h-screen pt-20 pb-36 px-4 sm:px-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-full bg-accent/10 dark:bg-ember/10 flex items-center justify-center text-accent dark:text-ember">
-            <ClipboardList size={20} />
-          </span>
-          <div>
-            <h1 className="text-ink dark:text-bone font-bold text-xl">Audit Log</h1>
-            <p className="text-xs text-muted dark:text-fog">Historical operational records and user security activity</p>
-          </div>
+    <Page width="default">
+      <PageHeader
+        size="sm"
+        icon={<ClipboardList size={20} />}
+        title="Audit Log"
+        subtitle="Historical operational records and user security activity"
+        badge={
           <span className="text-muted dark:text-fog text-xs font-mono bg-paper dark:bg-panel border border-line dark:border-edge px-2.5 py-1 rounded-md">
             {total} records
           </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <select
-            className="bg-white dark:bg-panel border border-line dark:border-edge rounded-lg px-3 py-1.5 text-ink dark:text-bone text-xs font-mono outline-none shadow-sm"
-            value={pageSize}
-            onChange={(e) => {
-              setPageSize(Number(e.target.value));
-              setPage(0);
-            }}
-          >
-            {PAGE_SIZES.map((n) => (
-              <option key={n} value={n}>{n} / page</option>
-            ))}
-          </select>
-          <button
-            onClick={() => void refetch()}
-            className="w-9 h-9 rounded-full bg-white dark:bg-panel border border-line dark:border-edge flex items-center justify-center text-muted dark:text-fog hover:text-ink dark:hover:text-bone transition-colors shadow-sm disabled:opacity-50"
-            title="Refresh"
-            aria-label="Refresh"
-            disabled={isFetching}
-          >
-            <RefreshCw size={15} className={isFetching ? "animate-spin" : undefined} />
-          </button>
-        </div>
-      </div>
+        }
+        actions={
+          <>
+            <select
+              className="bg-white dark:bg-panel border border-line dark:border-edge rounded-lg px-3 py-1.5 text-ink dark:text-bone text-xs font-mono outline-none shadow-sm"
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(0);
+              }}
+            >
+              {PAGE_SIZES.map((n) => (
+                <option key={n} value={n}>{n} / page</option>
+              ))}
+            </select>
+            <button
+              onClick={() => void refetch()}
+              className="w-9 h-9 rounded-full bg-white dark:bg-panel border border-line dark:border-edge flex items-center justify-center text-muted dark:text-fog hover:text-ink dark:hover:text-bone transition-colors shadow-sm disabled:opacity-50"
+              title="Refresh"
+              aria-label="Refresh"
+              disabled={isFetching}
+            >
+              <RefreshCw size={15} className={isFetching ? "animate-spin" : undefined} />
+            </button>
+          </>
+        }
+      />
 
       <div className="bg-white dark:bg-panel border border-line dark:border-edge rounded-card overflow-x-auto shadow-sm">
         <table className="w-full min-w-[580px] sm:min-w-0 text-sm border-collapse">
@@ -133,6 +134,6 @@ export function AuditLogPage() {
           </div>
         </div>
       </div>
-    </div>
+    </Page>
   );
 }

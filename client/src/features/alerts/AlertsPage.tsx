@@ -5,6 +5,8 @@ import { api } from "../../lib/api";
 import type { Alert } from "../../lib/types/alerts";
 import { useEvents } from "../../lib/useEvents";
 import { useUi } from "../../stores/store";
+import { Page } from "../../components/ui/Page";
+import { PageHeader } from "../../components/ui/PageHeader";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 const SEVERITY_STYLE: Record<string, string> = {
@@ -93,31 +95,30 @@ export function AlertsPage() {
   ];
 
   return (
-    <div className="min-h-screen pt-20 pb-36 px-4 sm:px-6 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <span className="w-9 h-9 rounded-full bg-accent/10 dark:bg-ember/10 flex items-center justify-center text-accent dark:text-ember">
-            <AlertTriangle size={20} />
-          </span>
-          <div>
-            <h1 className="text-ink dark:text-bone font-bold text-xl">Alerts</h1>
-            <p className="text-xs text-muted dark:text-fog">Real-time infrastructure warnings and trigger states</p>
-          </div>
-          {triggered.length > 0 && (
-            <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full ml-1">
+    <Page width="default">
+      <PageHeader
+        size="sm"
+        icon={<AlertTriangle size={20} />}
+        title="Alerts"
+        subtitle="Real-time infrastructure warnings and trigger states"
+        badge={
+          triggered.length > 0 ? (
+            <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
               {triggered.length}
             </span>
-          )}
-        </div>
-        <button
-          onClick={() => void refetch()}
-          className="w-9 h-9 rounded-full bg-white dark:bg-panel border border-line dark:border-edge flex items-center justify-center text-muted dark:text-fog hover:text-ink dark:hover:text-bone transition-colors"
-          title="Refresh"
-          aria-label="Refresh"
-        >
-          <RefreshCw size={15} />
-        </button>
-      </div>
+          ) : undefined
+        }
+        actions={
+          <button
+            onClick={() => void refetch()}
+            className="w-9 h-9 rounded-full bg-white dark:bg-panel border border-line dark:border-edge flex items-center justify-center text-muted dark:text-fog hover:text-ink dark:hover:text-bone transition-colors"
+            title="Refresh"
+            aria-label="Refresh"
+          >
+            <RefreshCw size={15} />
+          </button>
+        }
+      />
 
       <div className="flex gap-2 mb-4 flex-wrap">
         {tabOptions.map((t) => (
@@ -173,6 +174,6 @@ export function AlertsPage() {
           onResolve={() => void qc.invalidateQueries({ queryKey: ["alerts"] })}
         />
       ))}
-    </div>
+    </Page>
   );
 }

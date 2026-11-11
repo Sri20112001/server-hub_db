@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
 import { api } from "../lib/api";
 import type { Project } from "../lib/types/projects";
 import { useUi } from "../stores/store";
 import { ConfirmModal } from "./ui/ConfirmModal";
 import { Kicker } from "./ui/Kicker";
+import { Page } from "./ui/Page";
+import { PageHeader } from "./ui/PageHeader";
 import { StatusPill } from "./ui/StatusPill";
 import { TerminalModal } from "./TerminalModal";
 import { EditShipModal } from "./EditShipModal";
@@ -52,21 +53,14 @@ export function ProjectDetailsBody({
   };
 
   return (
-    <main className="w-full max-w-5xl mx-auto px-10 max-md:px-4 pt-24 pb-36">
-      <div className="flex items-center gap-3 flex-wrap">
-        <button
-          className="inline-flex items-center gap-1.5 bg-transparent border-0 cursor-pointer text-muted dark:text-fog hover:text-ink dark:hover:text-bone text-[13px] px-0"
-          onClick={onBack}
-        >
-          <ArrowLeft size={14} /> Back
-        </button>
-        <span className="text-line dark:text-edge">/</span>
-        <Kicker>Ship manifest</Kicker>
-        <h1 className="font-head text-[32px] font-bold tracking-[-0.03em] leading-[1.2] max-md:text-[26px]">
-          {project.name}
-        </h1>
-        <StatusPill status={project.status} />
-      </div>
+    <Page width="default">
+      <PageHeader
+        className="mb-0"
+        back={{ label: "Back", onClick: onBack }}
+        kicker="Ship manifest"
+        title={project.name}
+        status={<StatusPill status={project.status} />}
+      />
 
       {/* Manifest counts moved here from the summary drawer */}
       <div className="bg-white dark:bg-panel border border-line dark:border-edge rounded-card p-5 mt-5">
@@ -152,6 +146,6 @@ export function ProjectDetailsBody({
           onConfirm={() => void handleDeleteProject()}
         />
       )}
-    </main>
+    </Page>
   );
 }

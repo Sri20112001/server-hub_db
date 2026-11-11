@@ -1,8 +1,10 @@
 import { useNavigate } from "react-router";
-import { ArrowLeft, RefreshCw, Search } from "lucide-react";
+import { RefreshCw, Search } from "lucide-react";
 import { DashboardSkeleton } from "../../components/ui/DashboardSkeleton";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Kicker } from "../../components/ui/Kicker";
+import { Page } from "../../components/ui/Page";
+import { PageHeader } from "../../components/ui/PageHeader";
 import { DatabaseIcon } from "../../components/DatabaseIcon";
 import { btnGhost, inputCls } from "../../utils/databaseTokens";
 import { DatabaseBrowser } from "../../components/DatabaseBrowser";
@@ -24,39 +26,27 @@ export function DatabasesPage({ setOnline }: { setOnline: (v: boolean) => void }
   const servers = d.servers;
 
   return (
-    <main className="w-full max-w-7xl mx-auto px-10 max-md:px-4 pt-24 pb-36">
-      {/* Header */}
-      <div className="flex items-end justify-between gap-4 flex-wrap">
-        <div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 bg-transparent border-0 cursor-pointer text-muted dark:text-fog hover:text-ink dark:hover:text-bone text-[13px] px-0 transition-colors"
-              onClick={() => nav("/")}
-            >
-              <ArrowLeft size={14} /> Dashboard
-            </button>
-            <span className="text-line dark:text-edge">/</span>
-            <h1 className="font-head text-[32px] font-bold tracking-[-0.03em] leading-[1.2] max-md:text-[26px]">
-              Databases
-            </h1>
-          </div>
-          <p className="text-muted dark:text-fog mt-1.5">
-            <Kicker>
-              {servers.length} server{servers.length === 1 ? "" : "s"} detected
-              {!d.dockerAvailable && " · Docker unreachable"}
-            </Kicker>
-          </p>
-        </div>
-        <button
-          type="button"
-          className={btnGhost}
-          disabled={d.browsing}
-          onClick={() => void d.loadServers()}
-        >
-          <RefreshCw size={13} className={d.browsing ? "animate-spin" : ""} /> Re-scan
-        </button>
-      </div>
+    <Page width="wide">
+      <PageHeader
+        back={{ label: "Dashboard", onClick: () => nav("/") }}
+        title="Databases"
+        subtitle={
+          <Kicker>
+            {servers.length} server{servers.length === 1 ? "" : "s"} detected
+            {!d.dockerAvailable && " · Docker unreachable"}
+          </Kicker>
+        }
+        actions={
+          <button
+            type="button"
+            className={btnGhost}
+            disabled={d.browsing}
+            onClick={() => void d.loadServers()}
+          >
+            <RefreshCw size={13} className={d.browsing ? "animate-spin" : ""} /> Re-scan
+          </button>
+        }
+      />
 
       {servers.length === 0 ? (
         <div className="mt-6">
@@ -142,6 +132,6 @@ export function DatabasesPage({ setOnline }: { setOnline: (v: boolean) => void }
           <DatabaseBrowser d={d} />
         </div>
       )}
-    </main>
+    </Page>
   );
 }

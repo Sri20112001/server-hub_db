@@ -2,6 +2,8 @@ import { TelemetryCharts, TelemetryRangeControls } from "../../components/Teleme
 import { TelemetryDetail } from "../../components/TelemetryDetail";
 import { TelemetryInventory } from "../../components/TelemetryInventory";
 import { TelemetryStorage } from "../../components/TelemetryStorage";
+import { Page } from "../../components/ui/Page";
+import { PageHeader } from "../../components/ui/PageHeader";
 import { useTelemetry } from "../../hooks/useTelemetry";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
@@ -14,17 +16,12 @@ export function TelemetryPage() {
   const t = useTelemetry();
 
   return (
-    <main className="w-full max-w-7xl mx-auto px-10 max-md:px-4 pt-24 pb-36">
-      <div className="flex items-end justify-between gap-4 flex-wrap mb-8">
-        <div>
-          <h1 className="font-head text-[32px] capitalize font-bold tracking-[-0.03em] leading-[1.2] max-md:text-[26px]">
-            Telemetry.
-          </h1>
-          <p className="text-muted dark:text-fog mt-1.5">
-            Host resources and metrics
-          </p>
-        </div>
-      </div>
+    <Page width="wide">
+      <PageHeader
+        className="mb-8"
+        title="Telemetry."
+        subtitle="Host resources and metrics"
+      />
 
       <TelemetryRangeControls range={t.range} onRange={t.setRange} />
 
@@ -34,6 +31,6 @@ export function TelemetryPage() {
         {t.storage && <TelemetryStorage storage={t.storage} />}
         <TelemetryInventory detail={t.detail} cstats={t.cstats} />
       </div>
-    </main>
+    </Page>
   );
 }

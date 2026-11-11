@@ -23,6 +23,8 @@ import { CreateShipModal } from "../../components/CreateShipModal";
 import { ShipCard } from "../../components/ShipCard";
 import { StatShell, HealthRow } from "../../components/StatShell";
 import { SubOrbitalFeed } from "../../components/SubOrbitalFeed";
+import { Page } from "../../components/ui/Page";
+import { PageHeader } from "../../components/ui/PageHeader";
 import { useDashboard } from "../../hooks/useDashboard";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
@@ -79,32 +81,37 @@ export function DashboardPage({
   }
 
   return (
-    <main className="w-full max-w-7xl mx-auto px-10 max-md:px-4 pt-24 pb-36">
+    <Page width="wide">
       {/* masthead */}
-      <div className="flex items-end justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="font-head text-[32px] capitalize font-bold tracking-[-0.03em] leading-[1.2] max-md:text-[26px]">
+      <PageHeader
+        className=""
+        title={
+          <>
             {greeting()}, {user?.username ?? "Captain"}.
-          </h1>
-          <p className="text-muted dark:text-fog mt-1.5">
+          </>
+        }
+        subtitle={
+          <>
             {todayLong()} <span className="mx-1.5">•</span> {healthLine}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-          <button
-            className="inline-flex flex-1 sm:flex-none items-center justify-center gap-2 rounded-input text-[13px] font-medium px-4 py-2 cursor-pointer border border-transparent whitespace-nowrap transition-colors duration-150 disabled:opacity-55 disabled:cursor-not-allowed bg-white dark:bg-panel border-line dark:border-edge text-ink dark:text-bone hover:bg-paper dark:hover:bg-emboss"
-            onClick={() => void load()}
-          >
-            <RefreshCw size={14} /> Run Diagnostics
-          </button>
-          <button
-            className="inline-flex flex-1 sm:flex-none items-center justify-center gap-2 rounded-input text-[13px] font-medium px-4 py-2 cursor-pointer border border-transparent whitespace-nowrap transition-colors duration-150 disabled:opacity-55 disabled:cursor-not-allowed bg-accent dark:bg-ember text-white dark:text-black hover:bg-accent-hover dark:hover:bg-ember-hover"
-            onClick={() => setShowCreate(true)}
-          >
-            <Plus size={14} /> New Dispatch
-          </button>
-        </div>
-      </div>
+          </>
+        }
+        actions={
+          <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+            <button
+              className="inline-flex flex-1 sm:flex-none items-center justify-center gap-2 rounded-input text-[13px] font-medium px-4 py-2 cursor-pointer border border-transparent whitespace-nowrap transition-colors duration-150 disabled:opacity-55 disabled:cursor-not-allowed bg-white dark:bg-panel border-line dark:border-edge text-ink dark:text-bone hover:bg-paper dark:hover:bg-emboss"
+              onClick={() => void load()}
+            >
+              <RefreshCw size={14} /> Run Diagnostics
+            </button>
+            <button
+              className="inline-flex flex-1 sm:flex-none items-center justify-center gap-2 rounded-input text-[13px] font-medium px-4 py-2 cursor-pointer border border-transparent whitespace-nowrap transition-colors duration-150 disabled:opacity-55 disabled:cursor-not-allowed bg-accent dark:bg-ember text-white dark:text-black hover:bg-accent-hover dark:hover:bg-ember-hover"
+              onClick={() => setShowCreate(true)}
+            >
+              <Plus size={14} /> New Dispatch
+            </button>
+          </div>
+        }
+      />
 
       {/* stat tiles */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 mt-5">
@@ -243,7 +250,7 @@ export function DashboardPage({
         />
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid-cards">
             {data.projects.slice(0, FLEET_PREVIEW_LIMIT).map((p) => (
               <ShipCard
                 key={p.id}
@@ -312,6 +319,6 @@ export function DashboardPage({
         />
       )}
       */}
-    </main>
+    </Page>
   );
 }
