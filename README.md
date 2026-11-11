@@ -58,7 +58,31 @@ Alertmanager. The browser never communicates with those systems directly.
 
 The agent runs on each managed Linux server and reports metrics to the ServerHub API.
 
+### Join a host in one step
+
+`scripts/join-fleet.sh` does the whole onboarding from the target host: it logs
+in, registers the server, mints a token, downloads the matching binary and
+installs it as a service (systemd on Linux, launchd on macOS).
+
+```bash
+git clone --depth 1 https://github.com/Sri20112001/server-hub.git /tmp/server-hub
+sudo bash /tmp/server-hub/scripts/join-fleet.sh -url=http://imagesoft.in:4000 -user=admin
+```
+
+The token is written to `/etc/serverhub-agent/.env` (mode `0600`) and never
+appears on a command line, so it stays out of `ps` and shell history. Pass
+`-no-service` to register and download only, or `-name=` to override the fleet
+name. The script needs `admin` because minting agent tokens is admin-only.
+
 ### Install
+
+```bash
+# Download the prebuilt binary for this host's OS/arch (no Go, no clone)
+curl -fsSL "http://<serverhub-host>:4000/server-hub/api/agent/download?os=linux&arch=amd64" -o serverhub-agent
+chmod +x serverhub-agent
+```
+
+Or build from source:
 
 ```bash
 git clone https://github.com/Sri20112001/server-hub.git /opt/serverhub-agent
@@ -226,6 +250,7 @@ DELETE /server-hub/api/servers/:id/tokens/:tokenId
 # Agent (token auth)
 POST   /server-hub/api/agent/heartbeat
 POST   /server-hub/api/agent/metrics
+GET    /server-hub/api/agent/download?os=linux&arch=amd64   # public, prebuilt binary
 
 # Server Groups
 GET    /server-hub/api/server-groups
