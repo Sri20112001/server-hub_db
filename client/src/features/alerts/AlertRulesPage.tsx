@@ -8,8 +8,9 @@ import { RuleModal } from "../../components/RuleModal";
 import { useAlertRules } from "../../hooks/useAlertRules";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
-// Alert rules shell: header, stats, template gallery, filters, list and the
-// create/edit modal. Queries, actions and filter state come from
+// Alert rules shell: header, stats, filters, list and the create/edit modal.
+// Curated templates live in a header-triggered modal so they no longer take
+// up the page body. Queries, actions and filter state come from
 // useAlertRules; sections live in their own files.
 export function AlertRulesPage() {
   useDocumentTitle("Alert Rules");
@@ -46,13 +47,12 @@ export function AlertRulesPage() {
           {a.canWrite && (
             <>
               <button
-                onClick={() => void a.seedDefaults()}
-                disabled={a.seeding}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-input text-xs font-semibold bg-white dark:bg-panel border border-line dark:border-edge text-ink dark:text-bone hover:border-accent dark:hover:border-ember transition-colors cursor-pointer disabled:opacity-50"
-                title="Deploy all recommended starter rules"
+                onClick={() => a.setShowTemplates(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-input text-xs font-semibold bg-white dark:bg-panel border border-line dark:border-edge text-ink dark:text-bone hover:border-accent dark:hover:border-ember transition-colors cursor-pointer"
+                title="Browse curated starter rules"
               >
                 <Sparkles size={14} className="text-accent dark:text-ember" />
-                <span>{a.seeding ? "Deploying…" : "Starter Pack"}</span>
+                <span>Templates</span>
               </button>
 
               <button
@@ -73,15 +73,6 @@ export function AlertRulesPage() {
         enabled={a.enabledCount}
         critical={a.criticalCount}
         warning={a.warningCount}
-      />
-
-      {/* Recommended Presets Drawer / Toggle */}
-      <AlertRuleTemplates
-        rules={a.rules}
-        canWrite={a.canWrite}
-        open={a.showTemplates}
-        onToggle={() => a.setShowTemplates(!a.showTemplates)}
-        onDeploy={(p) => void a.deploySinglePreset(p)}
       />
 
       {/* Filter and Search Toolbar */}
@@ -140,6 +131,17 @@ export function AlertRulesPage() {
           View-only mode — operators can create/edit rules, and admins can delete them.
         </p>
       )}
+
+      {/* Curated templates live in a modal, not in the page body */}
+      <AlertRuleTemplates
+        rules={a.rules}
+        canWrite={a.canWrite}
+        open={a.showTemplates}
+        onToggle={() => a.setShowTemplates(false)}
+        onDeploy={(p) => void a.deploySinglePreset(p)}
+        onSeed={() => void a.seedDefaults()}
+        seeding={a.seeding}
+      />
 
       {/* Add / Edit Rule Modal */}
       {(a.showAdd || a.editing) && (

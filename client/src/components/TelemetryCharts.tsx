@@ -62,7 +62,7 @@ export function TelemetryCharts({
           </div>
         </div>
       ) : (
-        <>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
           <TelemetryChart
             title="CPU"
             unit="load"
@@ -121,7 +121,7 @@ export function TelemetryCharts({
             label2="write"
             format={fmtRate}
           />
-        </>
+        </div>
       )}
     </>
   );

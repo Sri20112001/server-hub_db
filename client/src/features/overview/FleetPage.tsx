@@ -1,23 +1,50 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { ArrowLeft, Play, Power, RotateCcw, Search, Trash2, X } from "lucide-react";
+import { ArrowLeft, Play, Power, RotateCcw, Trash2, X } from "lucide-react";
 import { api, ApiError } from "../../lib/api";
 import type { DashboardData } from "../../lib/types/dashboard";
 import type { Deployment, Project, Service } from "../../lib/types/projects";
+import { toFleetStatus, type FleetStatus } from "../../lib/types/status";
 import { useUi } from "../../stores/store";
 import { ConfirmModal } from "../../components/ui/ConfirmModal";
 import { DashboardSkeleton } from "../../components/ui/DashboardSkeleton";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Kicker } from "../../components/ui/Kicker";
+import { RegistryToolbar, type RegistryView } from "../../components/ui/RegistryToolbar";
 import { ProjectDrawer } from "../../components/ProjectDrawer";
 import { ShipCard } from "../../components/ShipCard";
+import { ShipTable } from "../../components/ShipTable";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 type BulkAction = "start" | "stop" | "restart";
 
-// Full fleet registry: every registered ship in one place with search.
-// Cards open the same details drawer as the dashboard preview. Tick cards
-// to run one lifecycle action across many ships at once.
+const STATUS_OPTIONS = [
+  { value: "all", label: "All statuses" },
+  { value: "sailing", label: "Sailing" },
+  { value: "choppy", label: "Choppy" },
+  { value: "lost", label: "Lost signal" },
+  { value: "docked", label: "Docked" },
+];
+
+const SORT_OPTIONS = [
+  { value: "name-asc", label: "Name A → Z" },
+  { value: "name-desc", label: "Name Z → A" },
+  { value: "status", label: "Status" },
+  { value: "stations-desc", label: "Most stations" },
+  { value: "launch-desc", label: "Recently launched" },
+];
+
+const STATUS_RANK: Record<FleetStatus, number> = {
+  sailing: 0,
+  choppy: 1,
+  lost: 2,
+  docked: 3,
+};
+
+// Full fleet registry: every registered ship in one place with search,
+// status filter, sort and card/table views. Cards and rows open the same
+// details drawer as the dashboard preview. Tick entries to run one lifecycle
+// action across many ships at once.
 export function FleetPage({ setOnline }: { setOnline: (v: boolean) => void }) {
   useDocumentTitle("Fleet Registry");
   const pushToast = useUi((s) => s.pushToast);
@@ -27,6 +54,9 @@ export function FleetPage({ setOnline }: { setOnline: (v: boolean) => void }) {
   const [servicesByProject, setServicesByProject] = useState<Record<number, Service[]>>({});
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const [status, setStatus] = useState("all");
+  const [sort, setSort] = useState("name-asc");
+  const [view, setView] = useState<RegistryView>("cards");
   const [picked, setPicked] = useState<Set<number>>(new Set());
   const [pendingBulk, setPendingBulk] = useState<BulkAction | null>(null);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
@@ -84,13 +114,37 @@ export function FleetPage({ setOnline }: { setOnline: (v: boolean) => void }) {
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    if (!needle || !data) return data?.projects ?? [];
-    return (data?.projects ?? []).filter(
-      (p) =>
+    const rows = (data?.projects ?? []).filter((p) => {
+      if (status !== "all" && toFleetStatus(p.status) !== status) return false;
+      if (!needle) return true;
+      return (
         p.name.toLowerCase().includes(needle) ||
-        (p.repository ?? "").toLowerCase().includes(needle),
-    );
-  }, [data, q]);
+        (p.repository ?? "").toLowerCase().includes(needle) ||
+        (p.environment ?? "").toLowerCase().includes(needle)
+      );
+    });
+
+    const launchedAt = (p: Project) => {
+      const d = recentByProject.get(p.id);
+      return d ? new Date(d.startedAt).getTime() : 0;
+    };
+
+    return [...rows].sort((a, b) => {
+      switch (sort) {
+        case "name-desc":
+          return b.name.localeCompare(a.name);
+        case "status":
+          return STATUS_RANK[toFleetStatus(a.status)] - STATUS_RANK[toFleetStatus(b.status)];
+        case "stations-desc":
+          return (servicesByProject[b.id]?.length ?? 0) - (servicesByProject[a.id]?.length ?? 0);
+        case "launch-desc":
+          return launchedAt(b) - launchedAt(a);
+        case "name-asc":
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+  }, [data, q, status, sort, recentByProject, servicesByProject]);
 
   const togglePick = (id: number) => {
     setPicked((prev) => {
@@ -154,38 +208,48 @@ export function FleetPage({ setOnline }: { setOnline: (v: boolean) => void }) {
     return <DashboardSkeleton />;
   }
 
+  const allPicked = filtered.length > 0 && filtered.every((p) => picked.has(p.id));
+
   return (
     <main className="w-full max-w-7xl mx-auto px-10 max-md:px-4 pt-24 pb-36">
-      <div className="flex items-end justify-between gap-4 flex-wrap">
-        <div>
-          <button
-            className="inline-flex items-center gap-1.5 bg-transparent border-0 cursor-pointer text-muted dark:text-fog hover:text-ink dark:hover:text-bone text-[13px] mb-2 px-0"
-            onClick={() => nav("/")}
-          >
-            <ArrowLeft size={14} /> Dashboard
-          </button>
-          <h1 className="font-head text-[32px] font-bold tracking-[-0.03em] leading-[1.2] max-md:text-[26px]">
-            Fleet registry
-          </h1>
+      <div className="flex items-end justify-between gap-4 flex-wrap mb-5">
+        <div className="min-w-0">
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              className="inline-flex items-center gap-1.5 bg-transparent border-0 cursor-pointer text-muted dark:text-fog hover:text-ink dark:hover:text-bone text-[13px] px-0 transition-colors"
+              onClick={() => nav("/")}
+            >
+              <ArrowLeft size={14} /> Dashboard
+            </button>
+            <span className="text-line dark:text-edge">/</span>
+            <h1 className="font-head text-[32px] font-bold tracking-[-0.03em] leading-[1.2] max-md:text-[26px]">
+              Fleet registry
+            </h1>
+          </div>
           <p className="text-muted dark:text-fog mt-1.5">
             <Kicker>
               {filtered.length} of {data.projects.length} ships
             </Kicker>
           </p>
         </div>
-        <label className="flex items-center gap-2 bg-white dark:bg-panel border border-line dark:border-edge rounded-input px-3 py-2 text-[13px] text-muted dark:text-fog focus-within:border-accent dark:focus-within:border-ember w-full sm:w-auto">
-          <Search size={14} className="shrink-0" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Filter ships…"
-            className="bg-transparent outline-none text-ink dark:text-bone placeholder:text-muted dark:placeholder:text-fog w-full sm:w-44"
-          />
-        </label>
       </div>
 
+      <RegistryToolbar
+        search={q}
+        onSearch={setQ}
+        placeholder="Filter ships by name, repo or environment…"
+        status={status}
+        onStatus={setStatus}
+        statusOptions={STATUS_OPTIONS}
+        sort={sort}
+        onSort={setSort}
+        sortOptions={SORT_OPTIONS}
+        view={view}
+        onView={setView}
+      />
+
       {picked.size > 0 && (
-        <div className="sticky top-16 z-30 bg-white dark:bg-panel border border-line dark:border-edge rounded-card px-4 py-3 mt-6 flex items-center gap-2 flex-wrap shadow-chrome">
+        <div className="sticky top-16 z-30 bg-white dark:bg-panel border border-line dark:border-edge rounded-card px-4 py-3 mt-1 mb-4 flex items-center gap-2 flex-wrap shadow-chrome">
           <span className="font-mono text-[13px] text-ink dark:text-bone font-medium">
             {picked.size} ship{picked.size === 1 ? "" : "s"} picked
           </span>
@@ -228,14 +292,14 @@ export function FleetPage({ setOnline }: { setOnline: (v: boolean) => void }) {
         </div>
       )}
 
-      <div className="mt-6">
+      <div>
         {filtered.length === 0 ? (
           <EmptyState
             title={data.projects.length === 0 ? "No ships in the fleet yet" : "No ships match"}
             hint={
               data.projects.length === 0
                 ? "New Docker finds auto-register on dashboard load."
-                : "Try a different filter."
+                : "Try a different search, status or sort."
             }
           />
         ) : (
@@ -243,11 +307,11 @@ export function FleetPage({ setOnline }: { setOnline: (v: boolean) => void }) {
             <label className="flex items-center gap-2 text-[13px] mb-3 cursor-pointer select-none text-muted dark:text-fog">
               <input
                 type="checkbox"
-                checked={filtered.length > 0 && filtered.every((p) => picked.has(p.id))}
+                checked={allPicked}
                 onChange={() =>
                   setPicked((prev) => {
                     const next = new Set(prev);
-                    if (filtered.every((p) => next.has(p.id))) {
+                    if (allPicked) {
                       filtered.forEach((p) => next.delete(p.id));
                     } else {
                       filtered.forEach((p) => next.add(p.id));
@@ -258,18 +322,30 @@ export function FleetPage({ setOnline }: { setOnline: (v: boolean) => void }) {
               />
               Select all {filtered.length} in view
             </label>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {filtered.map((p) => (
-                <ShipCard
-                  key={p.id}
-                  project={p}
-                  services={servicesByProject[p.id] ?? []}
-                  last={recentByProject.get(p.id)}
-                  onOpen={() => setParams({ project: String(p.id) })}
-                  selection={{ checked: picked.has(p.id), onToggle: () => togglePick(p.id) }}
-                />
-              ))}
-            </div>
+
+            {view === "table" ? (
+              <ShipTable
+                projects={filtered}
+                servicesByProject={servicesByProject}
+                recentByProject={recentByProject}
+                picked={picked}
+                onTogglePick={togglePick}
+                onOpen={(p) => setParams({ project: String(p.id) })}
+              />
+            ) : (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {filtered.map((p) => (
+                  <ShipCard
+                    key={p.id}
+                    project={p}
+                    services={servicesByProject[p.id] ?? []}
+                    last={recentByProject.get(p.id)}
+                    onOpen={() => setParams({ project: String(p.id) })}
+                    selection={{ checked: picked.has(p.id), onToggle: () => togglePick(p.id) }}
+                  />
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>

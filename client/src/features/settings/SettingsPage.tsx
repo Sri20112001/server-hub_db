@@ -1,5 +1,6 @@
 import { BellRing, Server, TriangleAlert, User, Users } from "lucide-react";
-import { api } from "../../lib/api";
+// DEPLOY: api only used by the paused history wipe.
+// import { api } from "../../lib/api";
 import { ConfirmModal } from "../../components/ui/ConfirmModal";
 import { Kicker } from "../../components/ui/Kicker";
 import { SettingsSkeleton } from "../../components/ui/SettingsSkeleton";
@@ -79,6 +80,7 @@ export function SettingsPage({ setOnline }: { setOnline: (v: boolean) => void })
         />
       )}
 
+      {/* DEPLOY: history wipe hidden while deploy surfaces are paused.
       {c.confirmWipe && (
         <ConfirmModal
           title="Wipe deployment history?"
@@ -97,6 +99,7 @@ export function SettingsPage({ setOnline }: { setOnline: (v: boolean) => void })
           }}
         />
       )}
+      */}
 
       {c.confirmLogoutAll && (
         <ConfirmModal

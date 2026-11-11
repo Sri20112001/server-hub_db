@@ -3,36 +3,36 @@ import { useNavigate, useSearchParams } from "react-router";
 import {
   Activity,
   ArrowRight,
-  Clock,
   Plus,
   Radar,
   Radio,
   RefreshCw,
-  Rocket,
   Ship,
 } from "lucide-react";
-import { fmtDuration, greeting, todayLong } from "../../lib/format";
+import { greeting, todayLong } from "../../lib/format";
 import { useAuth } from "../../stores/store";
-import { ConfirmModal } from "../../components/ui/ConfirmModal";
+// DEPLOY: import { ConfirmModal } from "../../components/ui/ConfirmModal";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Meter } from "../../components/ui/Meter";
+import { CountUp } from "../../components/ui/CountUp";
 import { DashboardSkeleton } from "../../components/ui/DashboardSkeleton";
 import { ProjectDrawer } from "../../components/ProjectDrawer";
 import { DiscoveryModal } from "../../components/DiscoveryModal";
 import { CreateShipModal } from "../../components/CreateShipModal";
-import { RecentLaunches } from "../../components/RecentLaunches";
+// DEPLOY: import { RecentLaunches } from "../../components/RecentLaunches";
 import { ShipCard } from "../../components/ShipCard";
 import { StatShell, HealthRow } from "../../components/StatShell";
 import { SubOrbitalFeed } from "../../components/SubOrbitalFeed";
 import { useDashboard } from "../../hooks/useDashboard";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
-// Fleet preview stays compact; the full registry lives on the Fleet page.
-export const FLEET_PREVIEW_LIMIT = 6;
+// The dashboard preview is capped so the page stays a summary; the full
+// registry lives on the Fleet page.
+export const FLEET_PREVIEW_LIMIT = 3;
 
-// Dashboard shell: masthead, stat tiles, fleet preview, launches table and
-// sub-orbital feed. Data, live events and modal state come from useDashboard;
-// sections live in their own files.
+// Dashboard shell: masthead, stat tiles, fleet preview and sub-orbital feed.
+// Data, live events and modal state come from useDashboard; sections live in
+// their own files.
 export function DashboardPage({
   setOnline,
 }: {
@@ -50,18 +50,14 @@ export function DashboardPage({
     servicesByProject,
     load,
     clearFeed,
-    wipeHistory,
     showCreate,
     setShowCreate,
     showScan,
     setShowScan,
-    confirmWipe,
-    setConfirmWipe,
-    projectById,
     recentByProject,
-    deployStats,
     healthLine,
     docked,
+    // DEPLOY: confirmWipe, setConfirmWipe, wipeHistory, projectById, deployStats,
   } = useDashboard(setOnline);
 
   // Opened from the command palette ("Scan shipyard" action).
@@ -75,7 +71,7 @@ export function DashboardPage({
 
   const selectedId = params.get("project");
   const selected = selectedId
-    ? (projectById.get(Number(selectedId)) ?? null)
+    ? (data?.projects.find((p) => p.id === Number(selectedId)) ?? null)
     : null;
 
   if (loading || !data) {
@@ -87,10 +83,6 @@ export function DashboardPage({
       {/* masthead */}
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          {/* <div className="flex items-center gap-2 flex-wrap text-accent-deep dark:text-ember mb-1.5">
-            <span className="w-[7px] h-[7px] rounded-full bg-accent-deep dark:bg-ember" />
-            <Kicker>Bridge console · Station 04</Kicker>
-          </div> */}
           <h1 className="font-head text-[32px] capitalize font-bold tracking-[-0.03em] leading-[1.2] max-md:text-[26px]">
             {greeting()}, {user?.username ?? "Captain"}.
           </h1>
@@ -115,7 +107,7 @@ export function DashboardPage({
       </div>
 
       {/* stat tiles */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4 mt-5">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 mt-5">
         <StatShell
           kicker="Server load"
           icon={<Activity size={15} />}
@@ -151,16 +143,18 @@ export function DashboardPage({
           foot={<span>{data.counts.services} stations crewed</span>}
         >
           <div className="flex items-center gap-2 flex-wrap items-baseline mt-2">
-            <span className="font-head text-[34px] font-bold">
-              {data.counts.projects}
-            </span>
+            <CountUp
+              value={data.counts.projects}
+              className="font-head text-[34px] font-bold"
+            />
             <span className="text-muted dark:text-fog">ships active</span>
           </div>
           <div className="text-muted dark:text-fog text-xs mt-1.5">
-            <span className="font-mono">{docked}</span> idle in shipyard
+            <CountUp value={docked} className="font-mono" /> idle in shipyard
           </div>
         </StatShell>
 
+        {/* DEPLOY: deployment tile hidden while deploy surfaces are paused.
         <StatShell
           kicker="Deploys"
           icon={<Rocket size={15} />}
@@ -187,6 +181,7 @@ export function DashboardPage({
             <span className="font-mono">{deployStats.rate}%</span> success rate
           </div>
         </StatShell>
+        */}
 
         <StatShell
           kicker="Fleet health"
@@ -272,12 +267,13 @@ export function DashboardPage({
         </>
       )}
 
-      {/* recent launches */}
+      {/* DEPLOY: recent launches table paused.
       <RecentLaunches
         data={data}
         projectById={projectById}
         onWipe={() => setConfirmWipe(true)}
       />
+      */}
 
       {/* telemetry card — sub-orbital feed (live TTY on the audit bus) */}
       <SubOrbitalFeed feed={feed} onClear={clearFeed} />
@@ -304,6 +300,7 @@ export function DashboardPage({
         />
       )}
 
+      {/* DEPLOY: wipe-history confirmation paused.
       {confirmWipe && (
         <ConfirmModal
           title="Wipe deployment history?"
@@ -314,6 +311,7 @@ export function DashboardPage({
           onConfirm={() => void wipeHistory()}
         />
       )}
+      */}
     </main>
   );
 }

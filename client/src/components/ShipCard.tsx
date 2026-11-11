@@ -1,6 +1,7 @@
-import { Hash } from "lucide-react";
+import { Hash, MapPin } from "lucide-react";
 import { Kicker } from "./ui/Kicker";
 import { StatusPill } from "./ui/StatusPill";
+import { CountUp } from "./ui/CountUp";
 import { fleetLabel, toFleetStatus, type FleetStatus } from "../lib/types/status";
 import { type Deployment, type Project, type Service } from "../lib/types/projects";
 import { shortSha, timeAgo } from "../lib/format";
@@ -12,8 +13,8 @@ const DOT_TONE: Record<FleetStatus, string> = {
   docked: "bg-stone",
 };
 
-// One fleet card: ship identity + status dot, repository path, service chips,
-// and a footer with station count / last launch. Used by both the dashboard
+// One fleet card: identity, repository, station count, last launch and the
+// service chips, finished with a status pill. Used by both the dashboard
 // preview grid and the full Fleet page.
 export function ShipCard({
   project,
@@ -29,13 +30,28 @@ export function ShipCard({
   selection?: { checked: boolean; onToggle: () => void };
 }) {
   const f = toFleetStatus(project.status);
+
   return (
-    <div
-      className="bg-white dark:bg-panel border border-line dark:border-edge rounded-card p-5 transition-colors duration-150 cursor-pointer hover:border-accent dark:hover:border-ember"
+    <article
+      role="button"
+      tabIndex={0}
       onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      aria-label={`Ship ${project.name}, ${fleetLabel[f]}`}
+      className="group bg-white dark:bg-panel border border-line dark:border-edge rounded-card p-4 sm:p-5 cursor-pointer select-none
+                 hover:border-accent dark:hover:border-ember hover:shadow-md hover:-translate-y-0.5
+                 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent dark:focus-visible:ring-ember focus-visible:ring-offset-2 dark:focus-visible:ring-offset-abyss
+                 transition-all duration-200"
     >
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2 flex-wrap">
+      {/* Identity */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 min-w-0">
           {selection && (
             <input
               type="checkbox"
@@ -43,77 +59,79 @@ export function ShipCard({
               onChange={selection.onToggle}
               onClick={(e) => e.stopPropagation()}
               aria-label={`Select ${project.name}`}
-              className="w-4 h-4 accent-current cursor-pointer"
+              className="w-4 h-4 accent-current cursor-pointer shrink-0"
             />
           )}
-          <span className={`w-2 h-2 rounded-full ${DOT_TONE[f]}`} />
-          <span className="font-head font-bold text-[17px]">
+          <span className={`w-2 h-2 rounded-full shrink-0 ${DOT_TONE[f]}`} />
+          <span className="font-head font-bold text-[17px] truncate">
             {project.name}
           </span>
         </div>
         {project.environment && (
           <span className="inline-flex items-center gap-1.5 font-mono text-[11px] bg-tint dark:bg-emboss border border-line dark:border-edge text-ink dark:text-bone rounded-md px-2 py-[3px] whitespace-nowrap">
-            v·{project.environment}
+            {project.environment}
           </span>
         )}
       </div>
-      <div className="font-mono text-muted dark:text-fog text-[11px] mt-1">
-        ~/{project.repository || project.name}
+
+      {/* Repository */}
+      <div className="flex items-center gap-1.5 font-mono text-muted dark:text-fog text-[11px] mt-1.5 min-w-0">
+        <MapPin size={11} className="shrink-0 opacity-70" />
+        <span className="truncate">~/{project.repository || project.name}</span>
       </div>
-      <div className="flex items-center gap-2 flex-wrap mt-2.5">
-        {services.length === 0 && (
-          <span className="text-muted dark:text-fog text-xs">
-            No stations charted
-          </span>
-        )}
-        {services.slice(0, 4).map((s) => (
-          <span
-            key={s.id}
-            className="inline-flex items-center gap-1.5 font-mono text-[11px] bg-tint dark:bg-emboss border border-line dark:border-edge text-ink dark:text-bone rounded-md px-2 py-[3px] whitespace-nowrap"
-          >
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${DOT_TONE[toFleetStatus(s.status)]}`}
-            />
-            {s.name}
-          </span>
-        ))}
-        {services.length > 4 && (
-          <span className="inline-flex items-center gap-1.5 font-mono text-[11px] bg-tint dark:bg-emboss border border-line dark:border-edge text-ink dark:text-bone rounded-md px-2 py-[3px] whitespace-nowrap">
-            +{services.length - 4}
-          </span>
-        )}
-      </div>
-      <div className="bg-paper dark:bg-abyss border border-line dark:border-edge rounded-xl px-4 py-3.5 flex items-center gap-2 flex-wrap justify-between mt-3">
-        <div className="flex items-center gap-4 flex-wrap">
-          <div>
-            <Kicker>Stations</Kicker>
-            <div className="font-mono text-[13px]">{services.length}</div>
-          </div>
-          <div>
-            <Kicker>Last launch</Kicker>
-            <div className="font-mono text-[13px]">
-              {last ? `${timeAgo(last.startedAt)}` : "—"}
-            </div>
+
+      {/* Key facts */}
+      <div className="grid grid-cols-2 gap-2 mt-3.5">
+        <div className="bg-paper dark:bg-abyss border border-line dark:border-edge rounded-xl px-3 py-2">
+          <Kicker>Stations</Kicker>
+          <div className="font-mono text-[15px] font-semibold text-ink dark:text-bone mt-0.5">
+            <CountUp value={services.length} />
           </div>
         </div>
-        {last?.commitSha && (
-          <span className="inline-flex items-center gap-1.5 font-mono text-[11px] bg-tint dark:bg-emboss border border-line dark:border-edge text-ink dark:text-bone rounded-md px-2 py-[3px] whitespace-nowrap">
-            <Hash size={11} /> {shortSha(last.commitSha)}
+        <div className="bg-paper dark:bg-abyss border border-line dark:border-edge rounded-xl px-3 py-2">
+          <Kicker>Last launch</Kicker>
+          <div className="font-mono text-[13px] text-ink dark:text-bone mt-1 truncate">
+            {last ? timeAgo(last.startedAt) : "—"}
+          </div>
+        </div>
+      </div>
+
+      {/* Services */}
+      <div className="flex items-center gap-1.5 flex-wrap mt-3">
+        {services.length === 0 && (
+          <span className="text-muted dark:text-fog text-xs">No stations charted</span>
+        )}
+        {services.slice(0, 3).map((s) => (
+          <span
+            key={s.id}
+            className="inline-flex items-center gap-1.5 font-mono text-[11px] bg-tint dark:bg-emboss border border-line dark:border-edge text-ink dark:text-bone rounded-md px-2 py-[3px] whitespace-nowrap max-w-[45%]"
+          >
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${DOT_TONE[toFleetStatus(s.status)]}`} />
+            <span className="truncate">{s.name}</span>
+          </span>
+        ))}
+        {services.length > 3 && (
+          <span className="inline-flex items-center font-mono text-[11px] bg-tint dark:bg-emboss border border-line dark:border-edge text-ink dark:text-bone rounded-md px-2 py-[3px] whitespace-nowrap">
+            +{services.length - 3}
           </span>
         )}
       </div>
-      <div className="flex items-center justify-between gap-4 mt-3">
-        <span className="text-muted dark:text-fog text-xs">
-          {f === "sailing"
-            ? "Ready to roll"
-            : f === "choppy"
-              ? "Throttle detected"
-              : f === "lost"
-                ? "Distress call"
-                : "Standing by"}
-        </span>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between gap-3 mt-3.5 pt-3 border-t border-line/60 dark:border-edge/60">
         <StatusPill status={project.status} label={fleetLabel[f]} />
+        <span className="inline-flex items-center gap-1.5 text-muted dark:text-fog text-[11px] font-mono">
+          {last?.commitSha ? (
+            <>
+              <Hash size={11} /> {shortSha(last.commitSha)}
+            </>
+          ) : (
+            <span className="group-hover:text-accent dark:group-hover:text-ember transition-colors">
+              Open manifest →
+            </span>
+          )}
+        </span>
       </div>
-    </div>
+    </article>
   );
 }

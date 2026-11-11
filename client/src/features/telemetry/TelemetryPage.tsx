@@ -29,7 +29,7 @@ export function TelemetryPage() {
       <TelemetryRangeControls range={t.range} onRange={t.setRange} />
 
       <div className="flex flex-col gap-5">
-        <TelemetryCharts loading={t.loading} hasPoints={t.points.length > 0} rich={t.rich} />
+        <TelemetryCharts key={t.range} loading={t.loading} hasPoints={t.points.length > 0} rich={t.rich} />
         {t.detail && <TelemetryDetail detail={t.detail} />}
         {t.storage && <TelemetryStorage storage={t.storage} />}
         <TelemetryInventory detail={t.detail} cstats={t.cstats} />

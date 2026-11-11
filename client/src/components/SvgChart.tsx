@@ -9,7 +9,7 @@ export function SvgChart({ data, color }: { data: PromRangeResult | null; color:
   );
   const series = data.result[0].values;
   if (!series.length) return null;
-  const W = 560; const H = 112;
+  const W = 420; const H = 96;
   const vals = series.map(([, v]) => parseFloat(v));
   const hi = Math.max(...vals, 1);
   const step = series.length > 1 ? W / (series.length - 1) : 0;
@@ -23,8 +23,8 @@ export function SvgChart({ data, color }: { data: PromRangeResult | null; color:
       {[0.25, 0.5, 0.75].map(f => (
         <line key={f} x1="0" x2={W} y1={H * f} y2={H * f} className="stroke-line dark:stroke-edge" strokeWidth="1" />
       ))}
-      <polygon points={`0,${H} ${pts} ${W},${H}`} fill={color} opacity="0.2" />
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" />
+      <polygon className="chart-area" points={`0,${H} ${pts} ${W},${H}`} fill={color} opacity="0.2" />
+      <polyline className="chart-line" points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" />
     </svg>
   );
 }

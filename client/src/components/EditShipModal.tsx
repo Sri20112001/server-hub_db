@@ -3,7 +3,8 @@ import { api } from "../lib/api";
 import type { Project } from "../lib/types/projects";
 import { Field } from "./ui/Field";
 import { Modal } from "./ui/Modal";
-import { Toggle } from "./ui/Toggle";
+// DEPLOY: Toggle only used by the paused auto-deploy switch.
+// import { Toggle } from "./ui/Toggle";
 
 const INPUT =
   "w-full bg-white dark:bg-panel border border-line dark:border-edge rounded-input font-body text-[13px] text-ink dark:text-bone px-3 py-2.5 outline-none focus:border-accent dark:focus:border-ember placeholder:text-stone dark:placeholder:text-fog";
@@ -35,7 +36,9 @@ export function EditShipModal({
   const [composeFile, setComposeFile] = useState(project.composeFile ?? "");
   const [gatewayPrefix, setGatewayPrefix] = useState(project.gatewayPrefix ?? "");
   const [healthUrl, setHealthUrl] = useState(project.healthUrl ?? "");
-  const [autoDeploy, setAutoDeploy] = useState(project.autoDeploy);
+  // DEPLOY: the auto-deploy switch is paused, so the current value is kept
+  // without an editable setter.
+  const autoDeploy = project.autoDeploy;
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -146,10 +149,12 @@ export function EditShipModal({
             placeholder="http://localhost:3000/healthz"
           />
         </Field>
+        {/* DEPLOY: auto-deploy toggle hidden while deploy surfaces are paused.
         <div className="flex items-center justify-between gap-3">
           <span className="text-[13px] text-muted dark:text-fog">Auto-deploy on push</span>
           <Toggle checked={autoDeploy} onChange={setAutoDeploy} label="Auto-deploy on push" />
         </div>
+        */}
         {err && (
           <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 text-red-800 dark:text-red-200 rounded-input px-3 py-2.5 text-[13px]">
             {err}

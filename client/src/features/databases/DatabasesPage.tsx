@@ -28,16 +28,19 @@ export function DatabasesPage({ setOnline }: { setOnline: (v: boolean) => void }
       {/* Header */}
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 bg-transparent border-0 cursor-pointer text-muted dark:text-fog hover:text-ink dark:hover:text-bone text-[13px] mb-2 px-0 transition-colors"
-            onClick={() => nav("/")}
-          >
-            <ArrowLeft size={14} /> Dashboard
-          </button>
-          <h1 className="font-head text-[32px] font-bold tracking-[-0.03em] leading-[1.2] max-md:text-[26px]">
-            Databases
-          </h1>
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 bg-transparent border-0 cursor-pointer text-muted dark:text-fog hover:text-ink dark:hover:text-bone text-[13px] px-0 transition-colors"
+              onClick={() => nav("/")}
+            >
+              <ArrowLeft size={14} /> Dashboard
+            </button>
+            <span className="text-line dark:text-edge">/</span>
+            <h1 className="font-head text-[32px] font-bold tracking-[-0.03em] leading-[1.2] max-md:text-[26px]">
+              Databases
+            </h1>
+          </div>
           <p className="text-muted dark:text-fog mt-1.5">
             <Kicker>
               {servers.length} server{servers.length === 1 ? "" : "s"} detected

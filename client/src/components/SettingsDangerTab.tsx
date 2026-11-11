@@ -26,6 +26,7 @@ export function SettingsDangerTab({ c }: { c: SettingsController }) {
           </button>
         </div>
 
+        {/* DEPLOY: deployment history belongs to the paused deploy surfaces.
         <div className="flex items-center justify-between gap-4 p-4 rounded-xl border border-brick/30 bg-brick/5 dark:bg-brick/10 flex-wrap">
           <div>
             <div className="font-semibold text-ink dark:text-bone text-sm">Wipe Deployment History</div>
@@ -38,6 +39,7 @@ export function SettingsDangerTab({ c }: { c: SettingsController }) {
             Wipe deployment logs
           </button>
         </div>
+        */}
       </div>
     </section>
   );

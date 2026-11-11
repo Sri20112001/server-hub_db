@@ -25,12 +25,14 @@ export function ProjectRigging({ project }: { project: Project }) {
             </span>
           </div>
         ))}
+        {/* DEPLOY: auto-deploy flag hidden while deploy surfaces are paused.
         <div className="flex items-center justify-between gap-4 text-[13px]">
           <span className="text-muted dark:text-fog">Auto-deploy</span>
           <span className="inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full font-mono text-[11px] bg-paper dark:bg-abyss text-ink dark:text-bone whitespace-nowrap border-0">
             {project.autoDeploy ? "ON — webhook steers" : "OFF — manual helm"}
           </span>
         </div>
+        */}
       </div>
     </div>
   );

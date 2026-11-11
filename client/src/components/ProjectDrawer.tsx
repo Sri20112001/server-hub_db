@@ -5,13 +5,12 @@ import type { Project } from "../lib/types/projects";
 import { ConfirmModal } from "./ui/ConfirmModal";
 import { Kicker } from "./ui/Kicker";
 import { StatusPill } from "./ui/StatusPill";
-import { useProjectDetails } from "../hooks/useProjectDetails";
 import { api } from "../lib/api";
 import { useUi } from "../stores/store";
 
-// Slim summary drawer: identity, key facts and counts only. The full
-// manifest (helm, stations, logs, launches, vault, snapshots) lives on the
-// project details page behind "View details".
+// Slim summary drawer: identity and key facts only. The full manifest (helm,
+// stations, logs, vault, snapshots) and its counts live on the project
+// details page behind "View details".
 export function ProjectDrawer({
   project,
   onClose,
@@ -22,7 +21,6 @@ export function ProjectDrawer({
   onChanged: () => void;
 }) {
   const nav = useNavigate();
-  const d = useProjectDetails(project, onChanged);
   const pushToast = useUi((s) => s.pushToast);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -55,14 +53,7 @@ export function ProjectDrawer({
     ["Branch", project.branch || "—"],
     ["Environment", project.environment || "—"],
     ["Status", project.status || "—"],
-    ["Auto-deploy", project.autoDeploy ? "ON — webhook steers" : "OFF — manual helm"],
-  ];
-
-  const counts: Array<[string, number]> = [
-    ["Stations", d.services.length],
-    ["Launches", d.deployments.length],
-    ["Secrets sealed", d.secrets.length],
-    ["Snapshots", d.backups.length],
+    // DEPLOY: ["Auto-deploy", project.autoDeploy ? "ON — webhook steers" : "OFF — manual helm"],
   ];
 
   return (
@@ -101,18 +92,7 @@ export function ProjectDrawer({
           </div>
         </div>
 
-        <div className="bg-white dark:bg-panel border border-line dark:border-edge rounded-card p-5 mt-4 shadow-sm">
-          <Kicker>Manifest</Kicker>
-          <div className="mt-2.5 grid grid-cols-2 gap-3">
-            {counts.map(([k, v]) => (
-              <div key={k} className="bg-paper dark:bg-abyss border border-line dark:border-edge rounded-xl px-4 py-3">
-                <div className="font-head text-[22px] font-bold text-ink dark:text-bone">{v}</div>
-                <div className="text-muted dark:text-fog text-xs mt-0.5">{k}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
+        {/* Manifest counts moved to the project details page. */}
         <div className="flex flex-col gap-2 mt-4">
           <button
             className="inline-flex items-center justify-center gap-2 rounded-input text-[13px] font-medium px-4 py-2.5 cursor-pointer border border-transparent whitespace-nowrap transition-colors duration-150 disabled:opacity-55 disabled:cursor-not-allowed bg-accent dark:bg-ember text-white dark:text-black hover:bg-accent-hover dark:hover:bg-ember-hover w-full shadow-sm"

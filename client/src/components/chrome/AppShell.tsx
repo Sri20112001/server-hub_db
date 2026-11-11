@@ -59,7 +59,7 @@ export function AppShell({ online }: { online: boolean }) {
           </div>
 
           {/* Search Action */}
-          <div className="pointer-events-auto flex-1 flex justify-center max-w-md min-w-0 mx-2">
+          <div className="pointer-events-auto flex-1 flex justify-center max-w-2xl min-w-0 mx-2">
             <button
               className="bg-white dark:bg-panel border border-line dark:border-edge rounded-full shadow-chrome flex items-center justify-center sm:justify-between gap-2 h-9 sm:h-[42px] px-2.5 sm:px-4 w-9 sm:w-auto max-w-full text-muted dark:text-fog text-[13px] cursor-pointer hover:border-accent dark:hover:border-ember transition-all"
               onClick={() => setPaletteOpen(true)}

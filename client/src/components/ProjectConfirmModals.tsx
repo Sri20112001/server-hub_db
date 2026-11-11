@@ -1,5 +1,6 @@
 import { ConfirmModal } from "./ui/ConfirmModal";
-import { shortSha } from "../lib/format";
+// DEPLOY: shortSha only used by the paused rollback modal.
+// import { shortSha } from "../lib/format";
 import type { ProjectDetails } from "../hooks/useProjectDetails";
 
 // The three lifecycle confirmation modals driven by the useProjectDetails
@@ -21,6 +22,7 @@ export function ProjectConfirmModals({ d, projectName }: { d: ProjectDetails; pr
           onConfirm={() => void d.runLifecycle(d.pending ?? "stop")}
         />
       )}
+      {/* DEPLOY: rollback re-runs a past launch — paused for now.
       {d.pendingRollback && (
         <ConfirmModal
           title={`Roll back to ${shortSha(d.pendingRollback.commitSha)}?`}
@@ -34,6 +36,7 @@ export function ProjectConfirmModals({ d, projectName }: { d: ProjectDetails; pr
           }}
         />
       )}
+      */}
       {d.pendingRestore && (
         <ConfirmModal
           title="Restore this snapshot?"

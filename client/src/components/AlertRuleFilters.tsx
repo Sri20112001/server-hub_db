@@ -23,7 +23,7 @@ export function AlertRuleFilters({
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
       {/* Search */}
-      <div className="relative flex-1 max-w-sm">
+      <div className="relative flex-1 max-w-xl">
         <Search
           size={14}
           className="absolute left-3 top-1/2 -translate-y-1/2 text-muted dark:text-fog pointer-events-none"

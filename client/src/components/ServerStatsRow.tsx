@@ -1,3 +1,5 @@
+import { CountUp } from "./ui/CountUp";
+
 // Fleet tally tiles above the server grid: total / online / offline / warning.
 export function ServerStatsRow({
   total,
@@ -20,7 +22,7 @@ export function ServerStatsRow({
       ].map((c) => (
         <div key={c.label} className="bg-white dark:bg-panel border border-line dark:border-edge rounded-card p-4">
           <div className="text-muted dark:text-fog text-xs uppercase tracking-wider mb-1">{c.label}</div>
-          <div className={`font-bold text-2xl font-mono ${c.color}`}>{c.value}</div>
+          <CountUp value={c.value} className={`font-bold text-2xl font-mono ${c.color}`} />
         </div>
       ))}
     </div>

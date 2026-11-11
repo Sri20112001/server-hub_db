@@ -1,4 +1,5 @@
 import { Kicker } from "./ui/Kicker";
+import { CountUp } from "./ui/CountUp";
 
 // Framed tile used across the dashboard stat row: kicker + icon header,
 // body, optional footer. Clickable tiles open the telemetry timeline.
@@ -66,7 +67,8 @@ export function HealthRow({
   return (
     <div className="flex items-center gap-2 flex-wrap justify-between">
       <span className="inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full font-mono text-[11px] bg-paper dark:bg-abyss text-ink dark:text-bone whitespace-nowrap border-0">
-        <span className={`w-1.5 h-1.5 rounded-full ${pip}`} /> {count} {label}
+        <span className={`w-1.5 h-1.5 rounded-full ${pip}`} />{" "}
+        <CountUp value={count} /> {label}
       </span>
       <span className="font-mono text-[11px] text-muted dark:text-fog">
         {tag}

@@ -12,6 +12,26 @@ const OPERATORS = ["above", "below"] as const;
 const SEVERITIES = ["WARNING", "CRITICAL"] as const;
 const FOR_PRESETS = [0, 30, 60, 120, 300, 900];
 
+// Accepts plain seconds ("90") as well as human units ("90s", "5m", "1h") so
+// the sustained-window field never rejects a value the user can reason about.
+function parseWindow(raw: string): number | null {
+  const s = raw.trim().toLowerCase();
+  if (!s) return 0;
+  const m = s.match(/^(\d+(?:\.\d+)?)\s*(s|m|h)?$/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  if (!Number.isFinite(n)) return null;
+  const unit = m[2] ?? "s";
+  return Math.round(unit === "h" ? n * 3600 : unit === "m" ? n * 60 : n);
+}
+
+function windowLabel(sec: number): string {
+  if (sec === 0) return "instant";
+  if (sec % 3600 === 0) return `${sec / 3600}h`;
+  if (sec % 60 === 0) return `${sec / 60}m`;
+  return `${sec}s`;
+}
+
 type RuleForm = {
   name: string;
   serverId: number | null;
@@ -66,9 +86,13 @@ export function RuleModal({
 
   const submit = async () => {
     const threshold = Number(form.threshold);
-    const forSec = Math.round(Number(form.forSec));
-    if (!Number.isFinite(threshold) || !Number.isFinite(forSec) || forSec < 0) {
-      pushToast("Threshold and sustained window must be valid numbers", true);
+    const forSec = parseWindow(form.forSec);
+    if (!Number.isFinite(threshold) || threshold < 0) {
+      pushToast("Threshold must be a valid percentage (e.g. 87.5)", true);
+      return;
+    }
+    if (forSec === null || forSec < 0) {
+      pushToast("Sustained window must be seconds or a duration like 90s, 5m, 1h", true);
       return;
     }
     setBusy(true);
@@ -102,6 +126,7 @@ export function RuleModal({
   const inputCls =
     "w-full bg-white dark:bg-panel border border-line dark:border-edge rounded-input font-body text-[13px] text-ink dark:text-bone px-3 py-2 outline-none focus:border-accent dark:focus:border-ember";
   const labelCls = "text-muted dark:text-fog text-xs mb-1 block font-medium";
+  const parsedWindow = parseWindow(form.forSec);
 
   return (
     <div
@@ -211,58 +236,76 @@ export function RuleModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>Threshold Percentage (%)</label>
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <label className={`${labelCls} mb-0`}>Threshold Percentage (%)</label>
+              <span className="text-[10px] font-mono text-muted dark:text-fog">custom allowed</span>
+            </div>
+            <div className="relative">
               <input
-                className={`${inputCls} font-mono`}
+                className={`${inputCls} font-mono pr-9`}
                 inputMode="decimal"
+                step="any"
                 value={form.threshold}
                 onChange={(e) => set("threshold", e.target.value)}
-                placeholder="85"
+                placeholder="e.g. 87.5"
               />
-              <div className="flex gap-1 mt-1.5 flex-wrap">
-                {[75, 80, 85, 90, 95].map((val) => (
-                  <button
-                    key={val}
-                    type="button"
-                    onClick={() => set("threshold", String(val))}
-                    className={`px-1.5 py-0.5 rounded text-[10px] font-mono border transition-colors cursor-pointer ${
-                      form.threshold === String(val)
-                        ? "bg-accent dark:bg-ember text-white dark:text-black border-transparent font-bold"
-                        : "border-line dark:border-edge text-muted dark:text-fog hover:text-ink dark:hover:text-bone"
-                    }`}
-                  >
-                    {val}%
-                  </button>
-                ))}
-              </div>
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono text-muted dark:text-fog">
+                %
+              </span>
             </div>
-            <div>
-              <label className={labelCls}>Severity</label>
-              <select
-                className={inputCls}
-                value={form.severity}
-                onChange={(e) => set("severity", e.target.value as RuleForm["severity"])}
-              >
-                {SEVERITIES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
+            <p className="text-[11px] text-muted dark:text-fog mt-1">
+              Type any value — the chips below are shortcuts.
+            </p>
+            <div className="flex gap-1 mt-1.5 flex-wrap">
+              {[75, 80, 85, 90, 95].map((val) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => set("threshold", String(val))}
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-mono border transition-colors cursor-pointer ${
+                    form.threshold === String(val)
+                      ? "bg-accent dark:bg-ember text-white dark:text-black border-transparent font-bold"
+                      : "border-line dark:border-edge text-muted dark:text-fog hover:text-ink dark:hover:text-bone"
+                  }`}
+                >
+                  {val}%
+                </button>
+              ))}
             </div>
+          </div>
+          <div>
+            <label className={labelCls}>Severity</label>
+            <select
+              className={inputCls}
+              value={form.severity}
+              onChange={(e) => set("severity", e.target.value as RuleForm["severity"])}
+            >
+              {SEVERITIES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
-            <label className={labelCls}>Sustained Breach Window (0 = instant firing)</label>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <label className={`${labelCls} mb-0`}>Sustained Breach Window</label>
+              <span className="text-[10px] font-mono text-muted dark:text-fog">0 = instant firing</span>
+            </div>
             <input
               className={`${inputCls} font-mono`}
-              inputMode="numeric"
               value={form.forSec}
               onChange={(e) => set("forSec", e.target.value)}
-              placeholder="0"
+              placeholder="e.g. 300, 90s, 5m, 1h"
             />
+            <p className="text-[11px] text-muted dark:text-fog mt-1">
+              Seconds or a duration (30s / 5m / 1h).
+              {parsedWindow !== null
+                ? ` Fires after ${windowLabel(parsedWindow)}.`
+                : " Unrecognised duration."}
+            </p>
             <div className="flex gap-1.5 mt-2 flex-wrap">
               {FOR_PRESETS.map((p) => (
                 <button
